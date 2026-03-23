@@ -3,7 +3,7 @@
  * Queries Notion databases for Projects and Space HQ documents
  */
 
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
@@ -39,24 +39,21 @@ const NOTION_VERSION = "2022-06-28";
 function notionCurl(method, endpoint, body = null, pageSize = 100) {
   const url = `${NOTION_API}${endpoint}`;
 
-  let cmd = [
-    "curl",
-    "-s",
-    "-X", method,
-    "-H", `Authorization: Bearer ${API_KEY}`,
-    "-H", `Notion-Version: ${NOTION_VERSION}`,
-    "-H", "Content-Type: application/json",
+  const headers = [
+    `Authorization: Bearer ${API_KEY}`,
+    `Notion-Version: ${NOTION_VERSION}`,
+    "Content-Type: application/json",
   ];
 
+  const args = ["-s", "-X", method];
+  headers.forEach((h) => args.push("-H", h));
   if (body) {
-    const bodyStr = JSON.stringify(body);
-    cmd.push("-d", bodyStr);
+    args.push("-d", JSON.stringify(body));
   }
-
-  cmd.push(url);
+  args.push(url);
 
   try {
-    const output = execSync(cmd.join(" "), { timeout: 15000 });
+    const output = execFileSync("curl", args, { timeout: 15000 });
     return JSON.parse(output.toString());
   } catch (e) {
     const stderr = e.stderr ? e.stderr.toString() : "";

@@ -1,0 +1,248 @@
+{
+  "$schema": "./dashboard.schema.json",
+  "_comment": "OpenClaw Command Center Configuration — Copy to dashboard.json and customize",
+
+  "server": {
+    "port": 3333,
+    "host": "localhost",
+    "trustProxy": false
+  },
+
+  "branding": {
+    "name": "Command Center",
+    "title": "OpenClaw Command Center",
+    "theme": "default",
+    "logo": null
+  },
+
+  "paths": {
+    "_comment": "Paths to OpenClaw workspace directories (supports ~ and $HOME)",
+    "workspace": "~/.openclaw-workspace",
+    "memory": "~/.openclaw-workspace/memory",
+    "state": "~/.openclaw-workspace/state",
+    "logs": "~/.openclaw-command-center/logs"
+  },
+
+  "auth": {
+    "mode": "none",
+    "_modeOptions": "none | token | tailscale | cloudflare | allowlist",
+    "token": null,
+    "allowedUsers": [],
+    "allowedIPs": ["127.0.0.1", "::1"],
+    "publicPaths": ["/api/health", "/api/whoami", "/favicon.ico"]
+  },
+
+  "dashboard": {
+    "refreshInterval": 30000,
+    "timezone": "America/Los_Angeles"
+  },
+
+  "sessions": {
+    "_comment": "Session monitoring configuration",
+    "healthCheckInterval": 60000,
+    "sessionTimeout": 3600000,
+    "maxSessions": 10
+  },
+
+  "cache": {
+    "enabled": true,
+    "ttl": 300000,
+    "maxSize": 100
+  },
+
+  "health": {
+    "_comment": "Health monitoring endpoints",
+    "enabled": true,
+    "endpoints": [
+      {
+        "name": "Gateway",
+        "url": "http://localhost:3000/health",
+        "interval": 30000
+      }
+    ]
+  },
+
+  "analytics": {
+    "enabled": true,
+    "retentionDays": 30,
+    "trackTokenUsage": true,
+    "trackRouting": true
+  },
+
+  "security": {
+    "corsOrigins": ["http://localhost:3333"],
+    "rateLimiting": {
+      "enabled": true,
+      "windowMs": 60000,
+      "max": 100
+    }
+  },
+
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "file": null
+  },
+
+  "integrations": {
+    "linear": {
+      "enabled": false,
+      "apiKey": null,
+      "teamId": null
+    },
+    "slack": {
+      "enabled": false,
+      "webhookUrl": null
+    },
+    "discord": {
+      "enabled": false,
+      "webhookUrl": null
+    }
+  },
+
+  "billing": {
+    "claudePlanCost": 200,
+    "claudePlanName": "Claude Code Max",
+    "modelRates": {
+      "__default__": {
+        "input": 15.0,
+        "output": 75.0,
+        "cacheRead": 1.5,
+        "cacheWrite": 18.75,
+        "note": "Claude Opus 4 default"
+      },
+      "sonnet": {
+        "input": 3.0,
+        "output": 15.0,
+        "cacheRead": 0.3,
+        "cacheWrite": 3.75,
+        "note": "Claude Sonnet 4"
+      },
+      "haiku": {
+        "input": 0.8,
+        "output": 4.0,
+        "cacheRead": 0.08,
+        "cacheWrite": 1.0,
+        "note": "Claude Haiku 4"
+      },
+      "opus": {
+        "input": 15.0,
+        "output": 75.0,
+        "cacheRead": 1.5,
+        "cacheWrite": 18.75,
+        "note": "Claude Opus 4"
+      },
+      "minimax-m2.7:cloud": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "flatRate": 20,
+        "flatRatePer": "month",
+        "note": "Ollama Pro flat fee — $20/mo, track tokens only"
+      },
+      "ollama": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "Local Ollama — no per-token cost"
+      },
+      "openai/gpt-4o": {
+        "input": 2.5,
+        "output": 10.0,
+        "cacheRead": 1.25,
+        "cacheWrite": 10.0,
+        "note": "GPT-4o"
+      },
+      "openai/gpt-4o-mini": {
+        "input": 0.15,
+        "output": 0.6,
+        "cacheRead": 0.075,
+        "cacheWrite": 0.6,
+        "note": "GPT-4o Mini"
+      },
+      "openai/o1-preview": {
+        "input": 15.0,
+        "output": 60.0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "OpenAI o1-preview (no caching)"
+      },
+      "openai/o1-mini": {
+        "input": 3.0,
+        "output": 12.0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "OpenAI o1-mini (no caching)"
+      },
+      "codex": {
+        "input": 3.0,
+        "output": 15.0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "OpenAI Codex (Sonnet 4 base)"
+      },
+      "googleai/gemini": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "flatRate": 0,
+        "flatRatePer": "month",
+        "note": "Google AI / Gemini API — OAuth flat rate model, verify billing"
+      },
+      "googleai/gemini-2.5-flash": {
+        "input": 0.125,
+        "output": 0.5,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "Gemini 2.5 Flash — $0.125/M input, $0.50/M output"
+      },
+      "googleai/gemini-2.5-pro": {
+        "input": 1.25,
+        "output": 5.0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "Gemini 2.5 Pro — $1.25/M input, $5.00/M output"
+      },
+      "openrouter/deepseek": {
+        "input": 0.27,
+        "output": 2.19,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "DeepSeek V3 via OpenRouter — $0.27/M input, $2.19/M output"
+      },
+      "openrouter/anthropic/claude-sonnet-4": {
+        "input": 3.0,
+        "output": 15.0,
+        "cacheRead": 0.3,
+        "cacheWrite": 3.75,
+        "note": "Claude Sonnet 4 via OpenRouter — same as direct"
+      },
+      "openrouter/anthropic/claude-opus-4": {
+        "input": 15.0,
+        "output": 75.0,
+        "cacheRead": 1.5,
+        "cacheWrite": 18.75,
+        "note": "Claude Opus 4 via OpenRouter — same as direct"
+      },
+      "openrouter/openai/o3-pro": {
+        "input": 10.0,
+        "output": 40.0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "note": "OpenAI o3-pro via OpenRouter — $10/M input, $40/M output"
+      },
+      "google": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "flatRate": 0,
+        "flatRatePer": "month",
+        "note": "Google AI / Google CLI OAuth — flat rate, verify plan"
+      }
+    }
+  }
+}

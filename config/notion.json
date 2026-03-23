@@ -1,0 +1,11 @@
+{
+  "apiKey": "env:NOTION_API_KEY",
+  "projectBoard": {
+    "dataSourceId": "324b0f7a-94d4-810d-8d0d-000b22a170a1",
+    "databaseId": "324b0f7a-94d4-81e9-a9a7-f19f67a35c93"
+  },
+  "spaceHQ": {
+    "dataSourceId": "324b0f7a-94d4-8006-a781-000b46955b2c",
+    "databaseId": "324b0f7a-94d4-8006-a781-000b46955b2c"
+  }
+}

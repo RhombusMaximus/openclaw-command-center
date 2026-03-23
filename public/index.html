@@ -843,6 +843,32 @@
           </div>
         </div>
 
+
+        <!-- Projects Section (Notion) -->
+        <div class="section" id="projects-section">
+          <div class="section-header">
+            <div class="section-title">
+              📋 Projects <span class="section-count" id="project-count">-</span>
+            </div>
+            <button class="btn btn-small" onclick="fetchProjects()" title="Refresh projects">
+              ↻
+            </button>
+          </div>
+
+          <!-- Projects Loading -->
+          <div id="projects-loading" style="text-align:center; padding: 20px; color: var(--text-muted);">
+            Loading projects...
+          </div>
+
+          <!-- Projects Kanban Board -->
+          <div id="projects-board" style="display: none; overflow-x: auto; padding-bottom: 10px;">
+            <div id="projects-columns" style="display: flex; gap: 16px; min-width: max-content;"></div>
+          </div>
+
+          <!-- Projects Error -->
+          <div id="projects-error" style="display: none; padding: 16px; background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); border-radius: 8px; color: var(--red);"></div>
+        </div>
+
         <!-- Memory Section -->
         <div class="section" id="memory-section">
           <div class="section-header">

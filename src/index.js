@@ -71,6 +71,7 @@ const {
   getOperatorBySlackId,
   startOperatorsRefresh,
 } = require("./operators");
+const notion = require("./notion");
 const { createSessionsModule } = require("./sessions");
 const { getCronJobs } = require("./cron");
 const { getCerebroTopics, updateTopicStatus } = require("./cerebro");
@@ -621,6 +622,45 @@ const server = http.createServer((req, res) => {
     return;
   } else if (isJobsRoute(pathname)) {
     handleJobsRequest(req, res, pathname, query, req.method);
+  } else if (pathname === "/api/notion/projects") {
+    const projects = notion.getProjects();
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ projects }));
+  } else if (pathname.startsWith("/api/notion/projects/")) {
+    const id = pathname.replace("/api/notion/projects/", "");
+    const project = notion.getProject(id);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(project));
+  } else if (pathname === "/api/notion/documents") {
+    const documents = notion.getSpaceHQ();
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ documents }));
+  } else if (pathname.startsWith("/api/notion/documents/")) {
+    const id = pathname.replace("/api/notion/documents/", "");
+    const document = notion.getDocumentContent(id);
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(document));
+  } else if (pathname === "/api/notion/calendar") {
+    const cronJobs = cron.getCronJobs();
+    const projects = notion.getProjects();
+    const events = [
+      ...cronJobs.map((j) => ({
+        date: j.nextRun,
+        title: j.name,
+        type: "cron",
+        color: "#3b82f6",
+      })),
+      ...projects
+        .filter((p) => p.dueDate && !p.archived)
+        .map((p) => ({
+          date: p.dueDate,
+          title: p.name,
+          type: "project",
+          color: "#22c55e",
+        })),
+    ];
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ events }));
   } else {
     serveStatic(req, res);
   }

@@ -192,6 +192,147 @@
     <script>
       let state = {};
 
+      // Agent persona registry — extend as new agents/personas are added
+      const PERSONA_REGISTRY = {
+        'rhombot': 'RhomBot',
+        'claude': 'Claude',
+        'karen': 'Karen',
+        'matlock': 'Matlock',
+        'main': 'RhomBot',
+        'subagent': null, // resolved dynamically below
+        'channel': null,
+        'telegram': '📱 Telegram',
+        'slack': '💬 Slack',
+        'discord': '🎮 Discord',
+        'signal': '🔐 Signal',
+        'whatsapp': '📲 WhatsApp',
+        'terminal': '⌨️ Terminal',
+      };
+
+      // Known RhomBot subagent task keywords → display name
+      const TASK_PERSONA_MAP = {
+        'heartbeat': 'Heartbeat',
+        'coding': 'Claude',
+        'memory': 'Memory',
+        'research': 'Research',
+        'summar': 'Summarizer',
+        'web': 'Web Agent',
+        'file': 'File Agent',
+        'calendar': 'Calendar',
+        'email': 'Email',
+      };
+
+      /**
+       * Resolve a human-readable display name for a session.
+       * Priority: displayName > known persona > topic keyword > readable fallback
+       */
+      function getAgentName(session) {
+        // 1. Explicit displayName is best
+        if (session.displayName && session.displayName.trim()) {
+          return session.displayName.trim();
+        }
+
+        const key = session.sessionKey || '';
+        const topic = session.topic || '';
+        const label = session.label || '';
+        const type = session.sessionType || '';
+        const model = session.model || '';
+
+        // 2. Main session → RhomBot
+        if (type === 'main' || key.endsWith(':main')) {
+          return 'RhomBot';
+        }
+
+        // 3. Known channel prefixes → friendly channel name
+        for (const [prefix, name] of Object.entries(PERSONA_REGISTRY)) {
+          if (prefix === 'main' || prefix === 'subagent' || prefix === 'rhombot' || prefix === 'claude' || prefix === 'karen' || prefix === 'matlock') continue;
+          if (name && (key.includes(`:${prefix}:`) || label.includes(prefix))) {
+            return name;
+          }
+        }
+
+        // 4. Subagent: try to derive persona from task/topic
+        if (type === 'subagent' || key.includes(':subagent:')) {
+          const shortId = session.shortId || key.split(':').pop()?.slice(0, 8) || 'unknown';
+
+          // Check topic for persona keywords
+          const topicLower = topic.toLowerCase();
+          for (const [kw, persona] of Object.entries(TASK_PERSONA_MAP)) {
+            if (topicLower.includes(kw)) {
+              return `${persona} (${shortId})`;
+            }
+          }
+
+          // Check model for persona hints
+          const modelLower = model.toLowerCase();
+          if (modelLower.includes('claude')) return `Claude (${shortId})`;
+          if (modelLower.includes('gpt') || modelLower.includes('openai')) return `GPT (${shortId})`;
+          if (modelLower.includes('gemini')) return `Gemini (${shortId})`;
+          if (modelLower.includes('ollama')) return `Local (${shortId})`;
+
+          return `Agent (${shortId})`;
+        }
+
+        // 5. Fallback: clean up label or session key
+        if (label && label.trim()) {
+          // Strip emoji prefix and trailing truncation
+          return label.replace(/^[^\w]+/, '').replace(/\.{3,}$/, '').trim() || 'Agent';
+        }
+
+        // 6. Last resort: readable segment from sessionKey
+        const parts = key.split(':');
+        if (parts.length >= 3) {
+          const segment = parts[parts.length - 1] || parts[parts.length - 2];
+          if (segment && segment.length > 0) {
+            return `Agent (${segment.slice(0, 8)})`;
+          }
+        }
+
+        return 'Agent';
+      }
+
+      /**
+       * Get emoji avatar for a session based on type/channel/persona
+       */
+      function getAgentEmoji(session) {
+        const topic = (session.topic || '').toLowerCase();
+        const key = session.sessionKey || '';
+        const type = session.sessionType || '';
+
+        if (topic.includes('heartbeat')) return '💓';
+        if (topic.includes('memory')) return '🧠';
+        if (topic.includes('coding')) return '💻';
+        if (topic.includes('calendar')) return '📅';
+        if (topic.includes('email')) return '📧';
+        if (topic.includes('research')) return '🔍';
+        if (topic.includes('summar')) return '📝';
+        if (topic.includes('web')) return '🌐';
+
+        if (type === 'main' || key.endsWith(':main')) return '🏠';
+        if (key.includes(':telegram:')) return '📱';
+        if (key.includes(':slack:')) return '💬';
+        if (key.includes(':discord:')) return '🎮';
+        if (key.includes(':subagent:')) return '🤖';
+
+        return '🤖';
+      }
+
+      /**
+       * Get a short role/subtitle label for the card header
+       */
+      function getAgentRole(session) {
+        const topic = session.topic || '';
+        const type = session.sessionType || '';
+        const model = session.model || '';
+
+        if (topic) return topic.split(',')[0].trim();
+        if (model) return model;
+        if (type === 'main') return 'Primary Agent';
+        if (type === 'subagent') return 'Subagent';
+        if (type === 'channel') return 'Channel';
+        return 'Agent';
+      }
+
       function escapeHtml(text) {
         if (!text) return '';
         const d = document.createElement('div');
@@ -260,14 +401,17 @@
           const task = getRecentMessage(session.messages);
           const runtime = session.runtimeSeconds || session.runtime || 0;
           const lastActive = session.lastActive || session.updatedAt || session.createdAt;
+          const name = getAgentName(session);
+          const emoji = getAgentEmoji(session);
+          const role = getAgentRole(session);
 
           return `
             <div class="agent-card ${activityState === 'active' || activityState === 'thinking' ? 'active' : 'idle'}">
               <div class="agent-header">
-                <div class="agent-avatar">${session.icon || '🤖'}</div>
+                <div class="agent-avatar">${emoji}</div>
                 <div class="agent-info">
-                  <div class="agent-name">${escapeHtml(session.name || session.agentId || 'Agent')}</div>
-                  <div class="agent-role">${escapeHtml(session.role || session.type || 'Agent')}</div>
+                  <div class="agent-name">${escapeHtml(name)}</div>
+                  <div class="agent-role">${escapeHtml(role)}</div>
                 </div>
                 <div class="agent-status ${activityState === 'thinking' ? 'thinking' : activityState === 'idle' ? 'idle' : 'active'}">
                   <div class="activity-wrapper">

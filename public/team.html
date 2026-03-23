@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Team - OpenClaw Command Center</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --card-bg: #161b22;
+        --card-hover: #1c2128;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --text-muted: #8b949e;
+        --accent: #58a6ff;
+        --green: #3fb950;
+        --yellow: #d29922;
+        --red: #f85149;
+        --purple: #a371f7;
+        --orange: #db6d28;
+        --sidebar-width: 220px;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+      }
+
+      /* Sidebar styles */
+      .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border); height: 100vh; position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 60; }
+      .sidebar.collapsed { width: 56px; }
+      .sidebar.collapsed .sidebar-title, .sidebar.collapsed .nav-section-title, .sidebar.collapsed .nav-item span:not(.nav-icon), .sidebar.collapsed .nav-badge, .sidebar.collapsed .sidebar-footer { display: none; }
+      .sidebar.collapsed .sidebar-header { justify-content: center; padding: 16px 8px; }
+      .sidebar.collapsed .sidebar-toggle { margin-left: 0; }
+      .sidebar.collapsed .nav-item { justify-content: center; padding: 12px; }
+      .sidebar.collapsed .nav-icon { margin: 0; font-size: 1.2rem; }
+      .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+      .sidebar-logo { font-size: 1.3rem; }
+      .sidebar-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+      .sidebar-toggle { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 1rem; }
+      .sidebar-toggle:hover { background: var(--bg); color: var(--text); }
+      .sidebar-nav { flex: 1; padding: 12px 8px; overflow-y: auto; }
+      .nav-section { margin-bottom: 16px; }
+      .nav-section-title { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px 4px; letter-spacing: 0.5px; }
+      .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); transition: all 0.15s; text-decoration: none; }
+      .nav-item:hover { background: var(--bg); color: var(--text); }
+      .nav-item.active { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+      .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+      .nav-badge { margin-left: auto; background: var(--border); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+      .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+
+      /* Main wrapper */
+      .main-wrapper { flex: 1; margin-left: var(--sidebar-width); transition: margin-left 0.2s ease; display: flex; flex-direction: column; min-height: 100vh; }
+      .main-wrapper.sidebar-collapsed { margin-left: 56px; }
+
+      /* Header */
+      header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--card-bg); position: sticky; top: 0; z-index: 50; }
+      .header-left { display: flex; align-items: center; gap: 16px; }
+      .page-title { font-size: 1.1rem; font-weight: 600; }
+      .back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; text-decoration: none; transition: all 0.15s; }
+      .back-btn:hover { border-color: var(--accent); color: var(--text); }
+      .header-actions { display: flex; gap: 8px; }
+      .btn-primary { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; border: 1px solid var(--border); background: var(--accent); color: #fff; border-color: var(--accent); transition: all 0.15s; }
+      .btn-primary:hover { background: #4c9aed; }
+
+      /* Main content */
+      main { padding: 24px; flex: 1; }
+
+      /* Stats bar */
+      .stats-bar { display: flex; gap: 12px; padding: 16px 24px; background: var(--card-bg); border-bottom: 1px solid var(--border); overflow-x: auto; margin-bottom: 24px; }
+      .stat { display: flex; flex-direction: column; align-items: center; padding: 12px 20px; background: var(--bg); border-radius: 8px; min-width: 100px; }
+      .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+      .stat-value.green { color: var(--green); }
+      .stat-value.yellow { color: var(--yellow); }
+      .stat-value.red { color: var(--red); }
+      .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-top: 4px; }
+
+      /* Section header */
+      .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+      .section-title { font-size: 1rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+      .section-count { background: var(--border); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; }
+
+      /* Agent cards grid */
+      .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+
+      .agent-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; transition: all 0.15s ease; position: relative; overflow: hidden; }
+      .agent-card:hover { background: var(--card-hover); border-color: var(--accent); }
+      .agent-card.active { border-color: var(--green); }
+      .agent-card.active::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--green); }
+      .agent-card.idle { opacity: 0.7; }
+
+      .agent-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+      .agent-avatar { width: 44px; height: 44px; background: var(--bg); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+      .agent-info { flex: 1; min-width: 0; }
+      .agent-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .agent-role { font-size: 0.75rem; color: var(--accent); margin-top: 2px; }
+      .agent-status { padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 500; flex-shrink: 0; }
+      .agent-status.active { background: rgba(63, 185, 80, 0.2); color: var(--green); }
+      .agent-status.idle { background: rgba(139, 148, 158, 0.15); color: var(--text-muted); }
+      .agent-status.thinking { background: rgba(88, 166, 255, 0.2); color: var(--accent); }
+
+      .agent-task { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+      .agent-task-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+      .agent-task-text { font-size: 0.8rem; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-style: italic; }
+
+      .agent-stats { display: flex; gap: 16px; padding-top: 10px; border-top: 1px solid var(--border); }
+      .agent-stat { display: flex; flex-direction: column; gap: 2px; }
+      .agent-stat-value { font-size: 0.85rem; font-weight: 600; }
+      .agent-stat-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
+
+      /* Activity indicator */
+      .activity-wrapper { display: flex; align-items: center; gap: 6px; }
+      .activity-indicator { width: 10px; height: 10px; border-radius: 50%; }
+      .activity-indicator.active { background: var(--green); animation: pulse 2s infinite; }
+      .activity-indicator.idle { background: var(--text-muted); opacity: 0.5; }
+      .activity-indicator.thinking { background: var(--accent); animation: pulse 1.5s infinite; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+      /* Loading */
+      .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted); }
+      .loading-spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Empty state */
+      .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+      .empty-state-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+
+      @media (max-width: 768px) {
+        .sidebar { transform: translateX(-100%); }
+        .sidebar.visible { transform: translateX(0); }
+        .main-wrapper { margin-left: 0; }
+        .agents-grid { grid-template-columns: 1fr; }
+        .stats-bar { flex-wrap: wrap; }
+      }
+    </style>
+    <script src="/js/sidebar.js"></script>
+  </head>
+  <body>
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper" id="main-wrapper">
+      <header>
+        <div class="header-left">
+          <a href="/" class="back-btn">← Back</a>
+          <h1 class="page-title">🤖 Team</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn-primary" onclick="fetchState()">🔄 Refresh</button>
+        </div>
+      </header>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat">
+          <div class="stat-value green" id="stat-active">—</div>
+          <div class="stat-label">Active Agents</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total Sessions</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="stat-thinkings">—</div>
+          <div class="stat-label">Thinking</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value yellow" id="stat-idle">—</div>
+          <div class="stat-label">Idle</div>
+        </div>
+      </div>
+
+      <main>
+        <div id="loading" class="loading">
+          <div class="loading-spinner"></div>
+          <span>Loading team data...</span>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none">
+          <div class="empty-state-icon">🤖</div>
+          <div>No agents found</div>
+        </div>
+        <div id="agents-section">
+          <div class="section-header">
+            <span class="section-title">🤖 Active Agents <span class="section-count" id="agent-count">0</span></span>
+          </div>
+          <div class="agents-grid" id="agents-grid"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let state = {};
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+      }
+
+      function getStatus(state) {
+        if (state === 'thinking' || state === 'active') return 'thinking';
+        if (state === 'idle') return 'idle';
+        return 'active';
+      }
+
+      function getActivityClass(state) {
+        if (state === 'thinking' || state === 'active') return 'thinking';
+        if (state === 'idle') return 'idle';
+        return 'active';
+      }
+
+      function getRecentMessage(messages) {
+        if (!messages || messages.length === 0) return null;
+        const last = messages[messages.length - 1];
+        if (last.role === 'assistant' && last.content) {
+          const text = typeof last.content === 'string' ? last.content : last.content.text || JSON.stringify(last.content);
+          return text.slice(0, 120);
+        }
+        return null;
+      }
+
+      function formatRuntime(seconds) {
+        if (!seconds) return '—';
+        if (seconds < 60) return `${seconds}s`;
+        if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+        return `${Math.round(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`;
+      }
+
+      function renderAgents() {
+        const sessions = state.sessions || [];
+        const loading = document.getElementById('loading');
+        const empty = document.getElementById('empty-state');
+        const grid = document.getElementById('agents-grid');
+
+        if (sessions.length === 0) {
+          loading.style.display = 'none';
+          grid.parentElement.style.display = 'none';
+          empty.style.display = 'block';
+          return;
+        }
+
+        loading.style.display = 'none';
+        empty.style.display = 'none';
+        grid.parentElement.style.display = 'block';
+
+        const active = sessions.filter(s => s.state === 'active' || s.state === 'thinking').length;
+        const idle = sessions.filter(s => s.state === 'idle').length;
+        const thinking = sessions.filter(s => s.state === 'thinking').length;
+
+        document.getElementById('stat-active').textContent = active;
+        document.getElementById('stat-total').textContent = sessions.length;
+        document.getElementById('stat-thinkings').textContent = thinking;
+        document.getElementById('stat-idle').textContent = idle;
+        document.getElementById('agent-count').textContent = active;
+
+        grid.innerHTML = sessions.map(session => {
+          const activityState = getActivityClass(session.state);
+          const task = getRecentMessage(session.messages);
+          const runtime = session.runtimeSeconds || session.runtime || 0;
+          const lastActive = session.lastActive || session.updatedAt || session.createdAt;
+
+          return `
+            <div class="agent-card ${activityState === 'active' || activityState === 'thinking' ? 'active' : 'idle'}">
+              <div class="agent-header">
+                <div class="agent-avatar">${session.icon || '🤖'}</div>
+                <div class="agent-info">
+                  <div class="agent-name">${escapeHtml(session.name || session.agentId || 'Agent')}</div>
+                  <div class="agent-role">${escapeHtml(session.role || session.type || 'Agent')}</div>
+                </div>
+                <div class="agent-status ${activityState === 'thinking' ? 'thinking' : activityState === 'idle' ? 'idle' : 'active'}">
+                  <div class="activity-wrapper">
+                    <span class="activity-indicator ${activityState}"></span>
+                    ${activityState === 'thinking' ? 'Thinking' : activityState === 'idle' ? 'Idle' : 'Active'}
+                  </div>
+                </div>
+              </div>
+              ${task ? `
+              <div class="agent-task">
+                <div class="agent-task-label">Current Task</div>
+                <div class="agent-task-text">"${escapeHtml(task)}"</div>
+              </div>` : ''}
+              <div class="agent-stats">
+                <div class="agent-stat">
+                  <div class="agent-stat-value">${formatRuntime(runtime)}</div>
+                  <div class="agent-stat-label">Runtime</div>
+                </div>
+                <div class="agent-stat">
+                  <div class="agent-stat-value">${session.messages?.length || 0}</div>
+                  <div class="agent-stat-label">Messages</div>
+                </div>
+                <div class="agent-stat">
+                  <div class="agent-stat-value">${lastActive ? escapeHtml(formatRelative(lastActive)) : '—'}</div>
+                  <div class="agent-stat-label">Last Active</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function formatRelative(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts);
+        const now = new Date();
+        const diff = Math.floor((now - d) / 1000);
+        if (diff < 60) return `${diff}s ago`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return d.toLocaleDateString();
+      }
+
+      async function fetchState() {
+        try {
+          const res = await fetch('/api/state');
+          state = await res.json();
+          renderAgents();
+        } catch (e) {
+          console.error('Failed to fetch state:', e);
+        }
+      }
+
+      fetchState();
+
+      // Auto-refresh every 30s
+      setInterval(fetchState, 30000);
+    </script>
+  </body>
+</html>

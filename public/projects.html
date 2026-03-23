@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects - OpenClaw Command Center</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --card-bg: #161b22;
+        --card-hover: #1c2128;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --text-muted: #8b949e;
+        --accent: #58a6ff;
+        --green: #3fb950;
+        --yellow: #d29922;
+        --red: #f85149;
+        --purple: #a371f7;
+        --orange: #db6d28;
+        --sidebar-width: 220px;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+      }
+
+      /* Sidebar (reuse same styles) */
+      .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border); height: 100vh; position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 60; }
+      .sidebar.collapsed { width: 56px; }
+      .sidebar.collapsed .sidebar-title, .sidebar.collapsed .nav-section-title, .sidebar.collapsed .nav-item span:not(.nav-icon), .sidebar.collapsed .nav-badge, .sidebar.collapsed .sidebar-footer { display: none; }
+      .sidebar.collapsed .sidebar-header { justify-content: center; padding: 16px 8px; }
+      .sidebar.collapsed .sidebar-toggle { margin-left: 0; }
+      .sidebar.collapsed .nav-item { justify-content: center; padding: 12px; }
+      .sidebar.collapsed .nav-icon { margin: 0; font-size: 1.2rem; }
+      .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+      .sidebar-logo { font-size: 1.3rem; }
+      .sidebar-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+      .sidebar-toggle { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 1rem; }
+      .sidebar-toggle:hover { background: var(--bg); color: var(--text); }
+      .sidebar-nav { flex: 1; padding: 12px 8px; overflow-y: auto; }
+      .nav-section { margin-bottom: 16px; }
+      .nav-section-title { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px 4px; letter-spacing: 0.5px; }
+      .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); transition: all 0.15s; text-decoration: none; }
+      .nav-item:hover { background: var(--bg); color: var(--text); }
+      .nav-item.active { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+      .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+      .nav-badge { margin-left: auto; background: var(--border); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+      .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+
+      /* Main wrapper */
+      .main-wrapper { flex: 1; margin-left: var(--sidebar-width); transition: margin-left 0.2s ease; display: flex; flex-direction: column; min-height: 100vh; }
+      .main-wrapper.sidebar-collapsed { margin-left: 56px; }
+
+      /* Header */
+      header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--card-bg); position: sticky; top: 0; z-index: 50; }
+      .header-left { display: flex; align-items: center; gap: 16px; }
+      .page-title { font-size: 1.1rem; font-weight: 600; }
+      .back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; text-decoration: none; transition: all 0.15s; }
+      .back-btn:hover { border-color: var(--accent); color: var(--text); }
+      .header-actions { display: flex; gap: 8px; }
+      .btn-primary { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; border: 1px solid var(--border); background: var(--accent); color: #fff; border-color: var(--accent); transition: all 0.15s; }
+      .btn-primary:hover { background: #4c9aed; }
+
+      /* Main content */
+      main { padding: 24px; flex: 1; }
+
+      /* Kanban board */
+      .kanban-board { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; }
+      .kanban-column { flex: 0 0 280px; display: flex; flex-direction: column; }
+      .column-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px 10px 0 0; border-bottom: none; }
+      .column-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+      .column-count { background: var(--border); padding: 1px 7px; border-radius: 10px; font-size: 0.7rem; }
+      .column-body { flex: 1; padding: 10px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 0 0 10px 10px; min-height: 200px; display: flex; flex-direction: column; gap: 10px; }
+
+      /* Project cards */
+      .project-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.15s; }
+      .project-card:hover { background: var(--card-hover); border-color: var(--accent); transform: translateY(-1px); }
+      .project-card-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; line-height: 1.3; }
+      .priority-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.65rem; font-weight: 600; margin-bottom: 6px; }
+      .priority-badge.p0 { background: rgba(248, 81, 73, 0.2); color: var(--red); }
+      .priority-badge.p1 { background: rgba(219, 109, 40, 0.2); color: var(--orange); }
+      .priority-badge.p2 { background: rgba(210, 153, 34, 0.2); color: var(--yellow); }
+      .priority-badge.p3 { background: rgba(139, 148, 158, 0.15); color: var(--text-muted); }
+      .project-meta { display: flex; gap: 10px; font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; }
+      .project-meta-item { display: flex; align-items: center; gap: 4px; }
+
+      /* Modal */
+      .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+      .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+      .modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 640px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column; transform: translateY(20px); transition: transform 0.2s; }
+      .modal-overlay.visible .modal { transform: translateY(0); }
+      .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+      .modal-title { font-size: 1rem; font-weight: 600; }
+      .modal-close { background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+      .modal-close:hover { background: var(--card-hover); color: var(--text); }
+      .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+      .detail-section { margin-bottom: 20px; }
+      .detail-section h3 { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+      .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .detail-item { background: var(--bg); border-radius: 6px; padding: 8px 12px; }
+      .detail-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px; }
+      .detail-value { font-size: 0.85rem; font-weight: 500; }
+      .detail-content { background: var(--bg); border-radius: 8px; padding: 14px; font-size: 0.85rem; line-height: 1.5; color: var(--text-muted); white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+      .detail-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+      .detail-actions a { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--accent); color: #fff; border-radius: 8px; font-size: 0.8rem; text-decoration: none; transition: background 0.15s; }
+      .detail-actions a:hover { background: #4c9aed; }
+
+      /* Loading */
+      .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted); }
+      .loading-spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Empty state */
+      .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+      .empty-state-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+
+      @media (max-width: 768px) {
+        .sidebar { transform: translateX(-100%); }
+        .sidebar.visible { transform: translateX(0); }
+        .main-wrapper { margin-left: 0; }
+        .kanban-board { flex-direction: column; }
+        .kanban-column { flex: none; width: 100%; }
+      }
+    </style>
+    <script src="/js/sidebar.js"></script>
+  </head>
+  <body>
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper" id="main-wrapper">
+      <header>
+        <div class="header-left">
+          <a href="/" class="back-btn">← Back</a>
+          <h1 class="page-title">📋 Projects</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn-primary" onclick="fetchProjects()">🔄 Refresh</button>
+        </div>
+      </header>
+      <main>
+        <div id="loading" class="loading">
+          <div class="loading-spinner"></div>
+          <span>Loading projects...</span>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none">
+          <div class="empty-state-icon">📋</div>
+          <div>No projects found</div>
+        </div>
+        <div class="kanban-board" id="kanban-board" style="display:none"></div>
+      </main>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title" id="modal-title">Project Detail</span>
+          <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
+
+    <script>
+      const COLUMNS = [
+        { id: 'backlog', label: 'Backlog', color: 'var(--text-muted)' },
+        { id: 'todo', label: 'Todo', color: 'var(--accent)' },
+        { id: 'in-progress', label: 'In Progress', color: 'var(--yellow)' },
+        { id: 'done', label: 'Done', color: 'var(--green)' },
+        { id: 'blocked', label: 'Blocked', color: 'var(--red)' },
+      ];
+
+      let projects = [];
+
+      function getPriorityClass(p) {
+        if (p === 'P0' || p === 0) return 'p0';
+        if (p === 'P1' || p === 1) return 'p1';
+        if (p === 'P2' || p === 2) return 'p2';
+        return 'p3';
+      }
+
+      function getStatusColumn(status) {
+        if (!status) return 'backlog';
+        const s = status.toLowerCase().replace(/\s+/g, '-');
+        if (s.includes('backlog')) return 'backlog';
+        if (s.includes('todo') || s.includes('not started')) return 'todo';
+        if (s.includes('progress') || s.includes('doing')) return 'in-progress';
+        if (s.includes('done') || s.includes('complete') || s.includes('finished')) return 'done';
+        if (s.includes('block')) return 'blocked';
+        return 'backlog';
+      }
+
+      function renderKanban() {
+        const board = document.getElementById('kanban-board');
+        const loading = document.getElementById('loading');
+        const empty = document.getElementById('empty-state');
+
+        if (projects.length === 0) {
+          loading.style.display = 'none';
+          board.style.display = 'none';
+          empty.style.display = 'block';
+          return;
+        }
+
+        loading.style.display = 'none';
+        empty.style.display = 'none';
+        board.style.display = 'flex';
+
+        const grouped = {};
+        COLUMNS.forEach(c => { grouped[c.id] = []; });
+        projects.forEach(p => {
+          const col = getStatusColumn(p.status);
+          grouped[col].push(p);
+        });
+
+        board.innerHTML = COLUMNS.map(col => `
+          <div class="kanban-column">
+            <div class="column-header">
+              <span class="column-title">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col.color}"></span>
+                ${col.label}
+              </span>
+              <span class="column-count">${grouped[col.id].length}</span>
+            </div>
+            <div class="column-body" id="col-${col.id}">
+              ${grouped[col.id].map(p => `
+                <div class="project-card" onclick="openProject('${escapeHtml(p.id || p.name)}')">
+                  <div class="project-card-title">${escapeHtml(p.name)}</div>
+                  ${p.priority ? `<span class="priority-badge ${getPriorityClass(p.priority)}">${escapeHtml(p.priority)}</span>` : ''}
+                  <div class="project-meta">
+                    ${p.assignee ? `<span class="project-meta-item">👤 ${escapeHtml(p.assignee)}</span>` : ''}
+                    ${p.dueDate ? `<span class="project-meta-item">📅 ${escapeHtml(p.dueDate)}</span>` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+      }
+
+      async function fetchProjects() {
+        try {
+          const res = await fetch('/api/notion/projects');
+          const data = await res.json();
+          projects = data.projects || data || [];
+          renderKanban();
+        } catch (e) {
+          console.error('Failed to fetch projects:', e);
+        }
+      }
+
+      async function openProject(id) {
+        const overlay = document.getElementById('modal-overlay');
+        const body = document.getElementById('modal-body');
+        const title = document.getElementById('modal-title');
+        title.textContent = 'Loading...';
+        body.innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
+        overlay.classList.add('visible');
+
+        try {
+          const res = await fetch(`/api/notion/projects/${encodeURIComponent(id)}`);
+          const data = await res.json();
+          const p = data.project || data;
+
+          title.textContent = p.name || 'Project Detail';
+
+          const fields = [];
+          if (p.status) fields.push({ label: 'Status', value: p.status });
+          if (p.priority) fields.push({ label: 'Priority', value: p.priority });
+          if (p.assignee) fields.push({ label: 'Assignee', value: p.assignee });
+          if (p.dueDate) fields.push({ label: 'Due Date', value: p.dueDate });
+          if (p.createdTime) fields.push({ label: 'Created', value: new Date(p.createdTime).toLocaleDateString() });
+          if (p.lastEditedTime) fields.push({ label: 'Updated', value: new Date(p.lastEditedTime).toLocaleDateString() });
+
+          body.innerHTML = `
+            <div class="detail-section">
+              <h3>Details</h3>
+              <div class="detail-grid">
+                ${fields.map(f => `
+                  <div class="detail-item">
+                    <div class="detail-label">${f.label}</div>
+                    <div class="detail-value">${escapeHtml(f.value)}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            ${p.content ? `
+            <div class="detail-section">
+              <h3>Content</h3>
+              <div class="detail-content">${escapeHtml(p.content)}</div>
+            </div>` : ''}
+            <div class="detail-actions">
+              ${p.url ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">🔗 Open in Notion</a>` : ''}
+            </div>
+          `;
+        } catch (e) {
+          body.innerHTML = '<div class="empty-state"><div>Failed to load project details</div></div>';
+        }
+      }
+
+      function closeModal() {
+        document.getElementById('modal-overlay').classList.remove('visible');
+      }
+
+      document.getElementById('modal-overlay').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+      });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+      fetchProjects();
+    </script>
+  </body>
+</html>

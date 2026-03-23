@@ -1386,17 +1386,17 @@ main {
   transition: height 0.3s ease;
 }
 
-/* Temperature */
-.temp-display {
+/* Context Meter */
+.context-display {
   display: flex;
   align-items: baseline;
   gap: 4px;
 }
-.temp-value {
+.context-value {
   font-size: 1.5rem;
   font-weight: 700;
 }
-.temp-unit {
+.context-unit {
   font-size: 0.9rem;
   color: var(--text-muted);
 }

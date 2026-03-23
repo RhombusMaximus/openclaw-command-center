@@ -298,19 +298,34 @@
                 </div>
               </div>
 
-              <!-- Temperature -->
-              <div class="vital-card" id="temp-card">
+              <!-- Context Meter -->
+              <div class="vital-card" id="context-meter-card">
                 <div class="vital-header">
-                  <span class="vital-label">🌡️ Temperature</span>
+                  <span class="vital-label">🧠 Context Meter</span>
+                  <span class="vital-value" id="context-pct">-%</span>
                 </div>
-                <div class="temp-display">
-                  <span class="temp-value" id="temp-value">-</span>
-                  <span class="temp-unit">°C</span>
+                <div class="vital-bar">
+                  <div class="vital-bar-fill purple" id="context-bar" style="width: 0%"></div>
                 </div>
                 <div class="vital-detail" style="margin-top: 8px">
-                  <span id="temp-status" style="font-size: 0.75rem; color: var(--text-muted)"
-                    >Checking...</span
-                  >
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="context-used">-</span>
+                    <span class="vital-detail-label">used</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="context-limit">128k</span>
+                    <span class="vital-detail-label">limit</span>
+                  </div>
+                </div>
+                <div class="vital-detail" style="margin-top: 8px">
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="context-cached" style="color: var(--green)">-</span>
+                    <span class="vital-detail-label">cached</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="near-limit-hits" style="color: var(--yellow)">0</span>
+                    <span class="vital-detail-label">near-limit hits</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2000,12 +2015,62 @@
             renderSessions(data.sessions, data.pagination, data.statusCounts);
             if (data.tokenStats) renderTokenStats(data.tokenStats);
             if (data.capacity) renderCapacity(data.capacity);
+            // Update context meter with session data
+            if (data.sessions) updateContextMeter(data.sessions);
           }
           return data;
         } catch (e) {
           console.error("Failed to fetch sessions:", e);
           return null;
         }
+      }
+
+      // Context Meter: update the context meter card from session data
+      function updateContextMeter(sessions) {
+        const contextStateEl = document.getElementById("context-pct");
+        const contextBarEl = document.getElementById("context-bar");
+        const contextUsedEl = document.getElementById("context-used");
+        const contextLimitEl = document.getElementById("context-limit");
+        const contextCachedEl = document.getElementById("context-cached");
+        const nearLimitHitsEl = document.getElementById("near-limit-hits");
+
+        // Context window state (persisted in memory so it survives page refreshes)
+        if (!window._contextMeterState) {
+          window._contextMeterState = { nearLimitHits: 0, prevTokens: 0 };
+        }
+        const ctxState = window._contextMeterState;
+
+        // Find the main session's token count
+        const mainSession = sessions.find(
+          (s) => s.sessionKey === "agent:main:main" || s.label?.includes("Main Session"),
+        );
+        const tokens = mainSession?.tokens || 0;
+        const contextLimit = 128000; // 128k tokens
+        const nearLimitThreshold = Math.floor(contextLimit * 0.80); // 80% threshold
+
+        // Cached tokens from session (if available)
+        const cachedTokens = mainSession?.cachedTokens || 0;
+        const contextPct = Math.min(Math.round((tokens / contextLimit) * 100), 100);
+
+        // Update near-limit hits counter
+        if (tokens > nearLimitThreshold && ctxState.prevTokens <= nearLimitThreshold) {
+          ctxState.nearLimitHits++;
+        }
+        ctxState.prevTokens = tokens;
+
+        // Update display
+        if (contextStateEl) contextStateEl.innerHTML = contextPct + '% <small style="font-size:0.6em;opacity:0.7">used</small>';
+        if (contextBarEl) {
+          contextBarEl.style.width = contextPct + "%";
+          contextBarEl.className =
+            "vital-bar-fill " + (contextPct > 90 ? "red" : contextPct > 75 ? "yellow" : "purple");
+        }
+        if (contextUsedEl) contextUsedEl.textContent = tokens >= 1000 ? (tokens / 1000).toFixed(1) + "k" : tokens;
+        if (contextLimitEl) contextLimitEl.textContent = "128k";
+        if (contextCachedEl) {
+          contextCachedEl.textContent = cachedTokens >= 1000 ? (cachedTokens / 1000).toFixed(1) + "k" : (cachedTokens || "—");
+        }
+        if (nearLimitHitsEl) nearLimitHitsEl.textContent = ctxState.nearLimitHits;
       }
 
       // Change page
@@ -2112,7 +2177,10 @@
 
         // Render each section
         if (state.vitals) renderVitals(state.vitals);
-        if (state.sessions) renderSessions(state.sessions, state.pagination, state.statusCounts);
+        if (state.sessions) {
+          renderSessions(state.sessions, state.pagination, state.statusCounts);
+          updateContextMeter(state.sessions);
+        }
         if (state.tokenStats) renderTokenStats(state.tokenStats);
         if (state.modelUsage) renderModelCards(state.modelUsage);
         if (state.capacity) renderCapacity(state.capacity);
@@ -2742,42 +2810,7 @@
           "disk-io",
           !vitals.disk?.iops && !vitals.disk?.throughputMBps,
         );
-
-        // Temperature
-        const temp = vitals.temperature;
-        const tempNote = vitals.temperatureNote;
-        const tempEl = document.getElementById("temp-value");
-        const tempStatusEl = document.getElementById("temp-status");
-        if (temp !== null && temp !== undefined && temp > 0) {
-          if (tempEl) {
-            tempEl.textContent = temp;
-            const tempColor =
-              temp < 50
-                ? "var(--green)"
-                : temp < 70
-                  ? "var(--text)"
-                  : temp < 85
-                    ? "var(--yellow)"
-                    : "var(--red)";
-            tempEl.style.color = tempColor;
-          }
-          const tempStatus =
-            temp < 50 ? "Cool" : temp < 70 ? "Normal" : temp < 85 ? "Warm" : "Hot!";
-          if (tempStatusEl) tempStatusEl.textContent = tempStatus;
-        } else {
-          if (tempEl) {
-            tempEl.textContent = "-";
-            tempEl.style.color = "var(--text-muted)";
-          }
-          if (tempStatusEl) {
-            tempStatusEl.textContent = tempNote || "Unavailable";
-          }
-          // Show dep hint for temperature if unavailable and dep missing
-          renderDepHint("temp-hint", "temperature", true);
-        }
       }
-
-      /**
        * Render an inline hint when an optional dependency is missing.
        * Creates/updates a small element showing install instructions.
        */
@@ -4759,6 +4792,16 @@
           renderHiddenSessionsList();
           renderHiddenTopicsList();
         });
+
+        // Poll context meter every 30s (independent of full state refresh)
+        setInterval(() => {
+          fetch("/api/state")
+            .then((r) => r.json())
+            .then((d) => {
+              if (d?.sessions) updateContextMeter(d.sessions);
+            })
+            .catch(() => {});
+        }, 30000);
       }
 
       // Ensure DOM is ready before initializing

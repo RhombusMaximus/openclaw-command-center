@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar - OpenClaw Command Center</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --card-bg: #161b22;
+        --card-hover: #1c2128;
+        --border: #30363d;
+        --text: #c9d1d9;
+        --text-muted: #8b949e;
+        --accent: #58a6ff;
+        --green: #3fb950;
+        --yellow: #d29922;
+        --red: #f85149;
+        --purple: #a371f7;
+        --orange: #db6d28;
+        --sidebar-width: 220px;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+      }
+
+      /* Sidebar styles (same as jobs.html) */
+      .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border); height: 100vh; position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 60; }
+      .sidebar.collapsed { width: 56px; }
+      .sidebar.collapsed .sidebar-title, .sidebar.collapsed .nav-section-title, .sidebar.collapsed .nav-item span:not(.nav-icon), .sidebar.collapsed .nav-badge, .sidebar.collapsed .sidebar-footer { display: none; }
+      .sidebar.collapsed .sidebar-header { justify-content: center; padding: 16px 8px; }
+      .sidebar.collapsed .sidebar-toggle { margin-left: 0; }
+      .sidebar.collapsed .nav-item { justify-content: center; padding: 12px; }
+      .sidebar.collapsed .nav-icon { margin: 0; font-size: 1.2rem; }
+      .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+      .sidebar-logo { font-size: 1.3rem; }
+      .sidebar-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+      .sidebar-toggle { margin-left: auto; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 1rem; }
+      .sidebar-toggle:hover { background: var(--bg); color: var(--text); }
+      .sidebar-nav { flex: 1; padding: 12px 8px; overflow-y: auto; }
+      .nav-section { margin-bottom: 16px; }
+      .nav-section-title { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px 4px; letter-spacing: 0.5px; }
+      .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-muted); transition: all 0.15s; text-decoration: none; }
+      .nav-item:hover { background: var(--bg); color: var(--text); }
+      .nav-item.active { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+      .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+      .nav-badge { margin-left: auto; background: var(--border); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; }
+      .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); font-size: 0.7rem; color: var(--text-muted); text-align: center; }
+
+      /* Main wrapper */
+      .main-wrapper { flex: 1; margin-left: var(--sidebar-width); transition: margin-left 0.2s ease; display: flex; flex-direction: column; min-height: 100vh; }
+      .main-wrapper.sidebar-collapsed { margin-left: 56px; }
+
+      /* Header */
+      header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--card-bg); position: sticky; top: 0; z-index: 50; }
+      .header-left { display: flex; align-items: center; gap: 16px; }
+      .page-title { font-size: 1.1rem; font-weight: 600; }
+      .back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; text-decoration: none; transition: all 0.15s; }
+      .back-btn:hover { border-color: var(--accent); color: var(--text); }
+      .header-actions { display: flex; gap: 8px; align-items: center; }
+      .btn-primary { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; border: 1px solid var(--border); background: var(--accent); color: #fff; border-color: var(--accent); transition: all 0.15s; }
+      .btn-primary:hover { background: #4c9aed; }
+      .nav-btn { padding: 6px 12px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; transition: all 0.15s; }
+      .nav-btn:hover { border-color: var(--accent); color: var(--text); }
+
+      /* Main content */
+      main { padding: 24px; flex: 1; display: flex; gap: 24px; }
+
+      /* Calendar */
+      .calendar-wrapper { flex: 1; }
+      .calendar-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; }
+      .calendar-month { font-size: 1rem; font-weight: 600; min-width: 180px; text-align: center; }
+      .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+      .calendar-weekday { text-align: center; font-size: 0.7rem; color: var(--text-muted); padding: 8px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+      .calendar-day { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; min-height: 80px; padding: 8px; cursor: pointer; transition: all 0.15s; position: relative; }
+      .calendar-day:hover { background: var(--card-hover); border-color: var(--accent); }
+      .calendar-day.other-month { opacity: 0.4; }
+      .calendar-day.today { border-color: var(--accent); }
+      .day-number { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+      .today .day-number { color: var(--accent); }
+      .day-dots { display: flex; flex-wrap: wrap; gap: 3px; }
+      .day-dot { width: 8px; height: 8px; border-radius: 50%; }
+      .day-dot.project { background: var(--green); }
+      .day-dot.cron { background: var(--accent); }
+
+      /* Side panel */
+      .side-panel { width: 300px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; align-self: start; position: sticky; top: 80px; }
+      .panel-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+      .panel-date { font-size: 0.8rem; color: var(--text-muted); }
+      .event-list { display: flex; flex-direction: column; gap: 8px; }
+      .event-item { background: var(--bg); border-radius: 8px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; }
+      .event-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+      .event-dot.project { background: var(--green); }
+      .event-dot.cron { background: var(--accent); }
+      .event-info { flex: 1; }
+      .event-title { font-size: 0.85rem; font-weight: 500; }
+      .event-type { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+      .empty-panel { text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 0.85rem; }
+
+      /* Legend */
+      .legend { display: flex; gap: 16px; margin-top: 12px; justify-content: center; }
+      .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted); }
+      .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+      /* Loading */
+      .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted); }
+      .loading-spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      @media (max-width: 768px) {
+        .sidebar { transform: translateX(-100%); }
+        .sidebar.visible { transform: translateX(0); }
+        .main-wrapper { margin-left: 0; }
+        main { flex-direction: column; }
+        .side-panel { width: 100%; position: static; }
+        .calendar-day { min-height: 60px; }
+      }
+    </style>
+    <script src="/js/sidebar.js"></script>
+  </head>
+  <body>
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper" id="main-wrapper">
+      <header>
+        <div class="header-left">
+          <a href="/" class="back-btn">← Back</a>
+          <h1 class="page-title">📅 Calendar</h1>
+        </div>
+        <div class="header-actions">
+          <button class="nav-btn" onclick="changeMonth(-1)">← Prev</button>
+          <span id="current-month" class="calendar-month"></span>
+          <button class="nav-btn" onclick="changeMonth(1)">Next →</button>
+          <button class="btn-primary" onclick="fetchAll()">🔄 Refresh</button>
+        </div>
+      </header>
+      <main>
+        <div class="calendar-wrapper">
+          <div class="calendar-grid" id="calendar-grid">
+            <div class="calendar-weekday">Sun</div>
+            <div class="calendar-weekday">Mon</div>
+            <div class="calendar-weekday">Tue</div>
+            <div class="calendar-weekday">Wed</div>
+            <div class="calendar-weekday">Thu</div>
+            <div class="calendar-weekday">Fri</div>
+            <div class="calendar-weekday">Sat</div>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Project</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span> Cron</div>
+          </div>
+        </div>
+        <div class="side-panel" id="side-panel">
+          <div class="panel-title">
+            <span>Events</span>
+            <span class="panel-date" id="panel-date">—</span>
+          </div>
+          <div id="event-list">
+            <div class="empty-panel">Select a day to view events</div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let currentDate = new Date();
+      let notionEvents = [];
+      let cronJobs = [];
+
+      const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+      function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        document.getElementById('current-month').textContent = `${MONTHS[month]} ${year}`;
+
+        const grid = document.getElementById('calendar-grid');
+        // Keep weekday headers
+        const weekdays = grid.querySelectorAll('.calendar-weekday');
+        grid.innerHTML = '';
+        weekdays.forEach(el => grid.appendChild(el));
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+        const today = new Date();
+
+        // Prev month days
+        for (let i = firstDay - 1; i >= 0; i--) {
+          const d = daysInPrevMonth - i;
+          const el = createDayEl(d, year, month - 1, true);
+          grid.appendChild(el);
+        }
+
+        // Current month days
+        for (let d = 1; d <= daysInMonth; d++) {
+          const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          const el = createDayEl(d, year, month, false, isToday);
+          grid.appendChild(el);
+        }
+
+        // Next month days
+        const totalCells = firstDay + daysInMonth;
+        const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+        for (let d = 1; d <= remaining; d++) {
+          const el = createDayEl(d, year, month + 1, true);
+          grid.appendChild(el);
+        }
+      }
+
+      function createDayEl(day, year, month, other, isToday) {
+        const div = document.createElement('div');
+        div.className = 'calendar-day' + (other ? ' other-month' : '') + (isToday ? ' today' : '');
+        const dateStr = formatDateStr(year, month, day);
+        div.dataset.date = dateStr;
+
+        const num = document.createElement('div');
+        num.className = 'day-number';
+        num.textContent = day;
+        div.appendChild(num);
+
+        const dots = document.createElement('div');
+        dots.className = 'day-dots';
+        const events = getEventsForDate(dateStr);
+        events.slice(0, 4).forEach(ev => {
+          const dot = document.createElement('span');
+          dot.className = 'day-dot ' + (ev.type || 'project');
+          dots.appendChild(dot);
+        });
+        div.appendChild(dots);
+
+        div.addEventListener('click', () => selectDay(dateStr));
+        return div;
+      }
+
+      function formatDateStr(year, month, day) {
+        const y = year;
+        const m = String(month + 1).padStart(2, '0');
+        const d = String(day).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function getEventsForDate(dateStr) {
+        const all = [...notionEvents, ...cronJobs];
+        return all.filter(e => e.date === dateStr);
+      }
+
+      function selectDay(dateStr) {
+        document.querySelectorAll('.calendar-day').forEach(el => el.style.borderColor = '');
+        const target = document.querySelector(`.calendar-day[data-date="${dateStr}"]`);
+        if (target) target.style.borderColor = 'var(--accent)';
+
+        const events = getEventsForDate(dateStr);
+        const panelDate = document.getElementById('panel-date');
+        const list = document.getElementById('event-list');
+        panelDate.textContent = dateStr;
+
+        if (events.length === 0) {
+          list.innerHTML = '<div class="empty-panel">No events on this day</div>';
+          return;
+        }
+
+        list.innerHTML = events.map(ev => `
+          <div class="event-item">
+            <span class="event-dot ${ev.type || 'project'}"></span>
+            <div class="event-info">
+              <div class="event-title">${escapeHtml(ev.title || ev.name || 'Event')}</div>
+              <div class="event-type">${ev.type || 'project'}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function escapeHtml(text) {
+        if (!text) return '';
+        const d = document.createElement('div');
+        d.textContent = text;
+        return d.innerHTML;
+      }
+
+      function changeMonth(delta) {
+        currentDate.setMonth(currentDate.getMonth() + delta);
+        renderCalendar();
+      }
+
+      async function fetchAll() {
+        try {
+          const [calRes, cronRes] = await Promise.all([
+            fetch('/api/notion/calendar').catch(() => ({ ok: false, json: () => ({ events: [] }) })),
+            fetch('/api/cron/jobs').catch(() => ({ ok: false, json: () => ({ jobs: [] }) }))
+          ]);
+          const calData = calRes.ok ? await calRes.json() : { events: [] };
+          const cronData = cronRes.ok ? await cronRes.json() : { jobs: [] };
+
+          notionEvents = (calData.events || calData || []).map(e => ({ ...e, type: e.type || 'project' }));
+          cronJobs = (cronData.jobs || []).map(j => ({
+            date: j.nextRun ? j.nextRun.split('T')[0] : null,
+            title: j.name,
+            type: 'cron'
+          })).filter(j => j.date);
+
+          renderCalendar();
+        } catch (e) {
+          console.error('Failed to fetch calendar data:', e);
+        }
+      }
+
+      fetchAll();
+    </script>
+  </body>
+</html>

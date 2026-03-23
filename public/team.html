@@ -97,6 +97,7 @@
       .agent-info { flex: 1; min-width: 0; }
       .agent-name { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .agent-role { font-size: 0.75rem; color: var(--accent); margin-top: 2px; }
+      .agent-model { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; font-family: monospace; }
       .agent-status { padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 500; flex-shrink: 0; }
       .agent-status.active { background: rgba(63, 185, 80, 0.2); color: var(--green); }
       .agent-status.idle { background: rgba(139, 148, 158, 0.15); color: var(--text-muted); }
@@ -323,14 +324,58 @@
       function getAgentRole(session) {
         const topic = session.topic || '';
         const type = session.sessionType || '';
-        const model = session.model || '';
 
         if (topic) return topic.split(',')[0].trim();
-        if (model) return model;
         if (type === 'main') return 'Primary Agent';
         if (type === 'subagent') return 'Subagent';
         if (type === 'channel') return 'Channel';
         return 'Agent';
+      }
+
+      /**
+       * Parse and format a model string into provider + model name.
+       * E.g. "ollama/minimax-m2.7:cloud" → "Ollama · minimax-m2.7:cloud"
+       *      "openai/gpt-4o"             → "OpenAI · GPT-4o"
+       *      "googleai/gemini-2.5-flash"  → "Google AI · Gemini 2.5 Flash"
+       */
+      function getModelBadge(session) {
+        const model = session.model || '';
+        if (!model) return null;
+
+        const parts = model.split('/');
+        let provider = '';
+        let modelName = model;
+
+        if (parts.length >= 2) {
+          const providerSlug = parts[0].toLowerCase();
+          modelName = parts.slice(1).join('/');
+
+          const PROVIDER_LABELS = {
+            'ollama': 'Ollama',
+            'openai': 'OpenAI',
+            'anthropic': 'Anthropic',
+            'googleai': 'Google AI',
+            'google': 'Google',
+            'openrouter': 'OpenRouter',
+            'azure': 'Azure',
+            'aws': 'AWS',
+            'deepseek': 'DeepSeek',
+            'cohere': 'Cohere',
+            'mistral': 'Mistral',
+            'xai': 'xAI',
+            'local': 'Local',
+          };
+
+          provider = PROVIDER_LABELS[providerSlug] || providerSlug.charAt(0).toUpperCase() + providerSlug.slice(1);
+        }
+
+        // Clean up model name: replace dashes with spaces, capitalize
+        modelName = modelName
+          .replace(/-/g, ' ')
+          .replace(/\bs ([\dc])/g, 's$1')  // "gpt 4o" → "gpt-4o" handled, fix "claude sonnet 4" etc.
+          .replace(/\b(\d)\.(\d)\b/g, '$1.$2'); // keep version numbers like "2.5"
+
+        return { provider, modelName };
       }
 
       function escapeHtml(text) {
@@ -404,6 +449,7 @@
           const name = getAgentName(session);
           const emoji = getAgentEmoji(session);
           const role = getAgentRole(session);
+          const modelBadge = getModelBadge(session);
 
           return `
             <div class="agent-card ${activityState === 'active' || activityState === 'thinking' ? 'active' : 'idle'}">
@@ -412,6 +458,7 @@
                 <div class="agent-info">
                   <div class="agent-name">${escapeHtml(name)}</div>
                   <div class="agent-role">${escapeHtml(role)}</div>
+                  ${modelBadge ? `<div class="agent-model">${escapeHtml(modelBadge.provider)} · ${escapeHtml(modelBadge.modelName)}</div>` : ''}
                 </div>
                 <div class="agent-status ${activityState === 'thinking' ? 'thinking' : activityState === 'idle' ? 'idle' : 'active'}">
                   <div class="activity-wrapper">

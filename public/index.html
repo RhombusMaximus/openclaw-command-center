@@ -4540,6 +4540,7 @@
         // Model metadata: display name, icon, color class, plan info
         const MODEL_META = {
           "minimax-m2.7:cloud": { name: "MiniMax (Ollama Pro)", icon: "🦞", color: "minimax", plan: "$20/mo flat" },
+          "nemotron": { name: "NVIDIA Nemotron 3 Super", icon: "🖥️", color: "nvidia", plan: "Ollama (local)" },
           "sonnet": { name: "Claude Sonnet", icon: "🧠", color: "anthropic", plan: "Anthropic API" },
           "opus": { name: "Claude Opus", icon: "🧠", color: "anthropic", plan: "Anthropic API" },
           "haiku": { name: "Claude Haiku", icon: "🧠", color: "anthropic", plan: "Anthropic API" },
@@ -4572,7 +4573,7 @@
           // For flat-rate models, show token count and flat rate note
           // For per-token models, show tokens and estimated cost
           let statLine;
-          if (model === "minimax-m2.7:cloud") {
+          if (model === "minimax-m2.7:cloud" || model === "nemotron") {
             statLine = `<span class="quota-stat-main">${formatTokenCount(totalTokens)} tokens</span><span class="quota-stat-sub">${reqs} reqs · ${meta.plan}</span>`;
           } else {
             const cost = data.cost > 0 ? `$${data.cost.toFixed(4)}` : "—";
@@ -4594,7 +4595,7 @@
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 2px;">
                   ${reqs} reqs
-                  ${model === "minimax-m2.7:cloud" ? "· " + meta.plan : "· est. " + (data.cost > 0 ? "$" + data.cost.toFixed(4) : "—")}
+                  ${model === "minimax-m2.7:cloud" || model === "nemotron" ? "· " + meta.plan : "· est. " + (data.cost > 0 ? "$" + data.cost.toFixed(4) : "—")}
                 </div>
               </div>
               <div style="margin-top: 8px; font-size: 0.7rem; color: var(--text-muted, #8b949e);">

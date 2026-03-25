@@ -153,59 +153,50 @@
             </div>
             <div class="vitals-grid">
               <!-- CPU -->
-              <div class="vital-card">
+              <div class="vital-card" id="cpu-card" onclick="toggleCpuDetails()" style="cursor:pointer" title="Click to toggle details">
                 <div class="vital-header">
-                  <span class="vital-label">⚡ CPU</span>
+                  <span class="vital-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> CPU
+                  </span>
                   <span class="vital-value" id="cpu-percent">-%</span>
                 </div>
-                <div
-                  id="cpu-chip"
-                  style="font-size: 0.7rem; color: var(--accent); margin-bottom: 8px"
-                ></div>
                 <div class="vital-bar">
                   <div class="vital-bar-fill blue" id="cpu-bar" style="width: 0%"></div>
                 </div>
-                <div class="vital-detail" style="margin-bottom: 8px">
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="cpu-user">-%</span>
-                    <span class="vital-detail-label">user</span>
+                <div id="cpu-details" style="display:none; margin-top: 8px">
+                  <div class="vital-detail" style="margin-bottom: 6px">
+                    <div class="vital-detail-item">
+                      <span class="vital-detail-value" id="cpu-user">-%</span>
+                      <span class="vital-detail-label">user</span>
+                    </div>
+                    <div class="vital-detail-item">
+                      <span class="vital-detail-value" id="cpu-sys">-%</span>
+                      <span class="vital-detail-label">sys</span>
+                    </div>
+                    <div class="vital-detail-item">
+                      <span class="vital-detail-value" id="cpu-idle">-%</span>
+                      <span class="vital-detail-label">idle</span>
+                    </div>
                   </div>
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="cpu-sys">-%</span>
-                    <span class="vital-detail-label">sys</span>
-                  </div>
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="cpu-idle">-%</span>
-                    <span class="vital-detail-label">idle</span>
+                  <div class="vital-detail">
+                    <div class="vital-detail-item">
+                      <span class="vital-detail-value" id="cpu-load-1">-</span>
+                      <span class="vital-detail-label">1m</span>
+                    </div>
+                    <div class="vital-detail-item">
+                      <span class="vital-detail-value" id="cpu-load-5">-</span>
+                      <span class="vital-detail-label">5m</span>
+                    </div>
+                    <div class="vital-detail-item">
+                      <span class="vital-detail-value" id="cpu-load-15">-</span>
+                      <span class="vital-detail-label">15m</span>
+                    </div>
+                    <div class="vital-detail-item">
+                      <span class="vital-detail-value" id="cpu-cores">-</span>
+                      <span class="vital-detail-label">cores</span>
+                    </div>
                   </div>
                 </div>
-                <div class="vital-detail">
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="cpu-load-1">-</span>
-                    <span class="vital-detail-label">1m avg</span>
-                  </div>
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="cpu-load-5">-</span>
-                    <span class="vital-detail-label">5m avg</span>
-                  </div>
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="cpu-load-15">-</span>
-                    <span class="vital-detail-label">15m avg</span>
-                  </div>
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="cpu-cores">-</span>
-                    <span class="vital-detail-label">cores</span>
-                  </div>
-                </div>
-                <div
-                  id="cpu-topology"
-                  style="
-                    margin-top: 8px;
-                    font-size: 0.7rem;
-                    color: var(--text-muted);
-                    text-align: center;
-                  "
-                ></div>
               </div>
 
               <!-- Memory -->
@@ -301,7 +292,9 @@
               <!-- Context Meter -->
               <div class="vital-card" id="context-meter-card">
                 <div class="vital-header">
-                  <span class="vital-label">🧠 Context Meter</span>
+                  <span class="vital-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Context Meter
+                </span>
                   <span class="vital-value" id="context-pct">-%</span>
                 </div>
                 <div class="vital-bar">
@@ -435,8 +428,11 @@
           >
             🚪 Gateway Status
           </button>
-          <button class="quick-action-btn" onclick="pruneStalesSessions()">
-            <span data-i18n="quickActions.cleanStale">🧹 Clean Stale Sessions</span>
+          <button class="quick-action-btn danger-action-btn" onclick="pruneStalesSessions()">
+            <span data-i18n="quickActions.cleanStale">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Clean Stale Sessions
+            </span>
           </button>
         </div>
 
@@ -444,7 +440,7 @@
         <div class="section" id="subagents-section">
           <div class="section-header">
             <div class="section-title">
-              🦞 Active Sub-agents
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> Active Sub-agents
               <span class="section-count" id="subagent-count">0</span>
             </div>
           </div>
@@ -467,7 +463,9 @@
               <!-- Claude Session -->
               <div class="vital-card">
                 <div class="vital-header">
-                  <span class="vital-label">🔮 Session Limit</span>
+                  <span class="vital-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Session Limit
+                </span>
                   <span class="vital-value" id="claude-session-pct"
                     >-% <small style="font-size: 0.6em; opacity: 0.7">used</small></span
                   >
@@ -494,7 +492,9 @@
               <!-- Claude Weekly -->
               <div class="vital-card">
                 <div class="vital-header">
-                  <span class="vital-label">📅 Weekly (All Models)</span>
+                  <span class="vital-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Weekly (All Models)
+                </span>
                   <span class="vital-value" id="claude-weekly-pct"
                     >-% <small style="font-size: 0.6em; opacity: 0.7">used</small></span
                   >
@@ -540,7 +540,7 @@
               <!-- LLM Routing -->
               <div class="vital-card">
                 <div class="vital-header">
-                  <span class="vital-label">🦞 Task Routing</span>
+                  <span class="vital-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> Task Routing</span>
                   <span class="vital-value" id="total-routed-tasks">-</span>
                 </div>
                 <div class="vital-detail" style="margin-top: 12px">
@@ -767,7 +767,7 @@
         <div class="section" id="cron-section">
           <div class="section-header">
             <div class="section-title">
-              ⏰ Cron Jobs <span class="section-count" id="cron-count">0</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Cron Jobs <span class="section-count" id="cron-count">0</span>
             </div>
           </div>
 
@@ -863,7 +863,7 @@
         <div class="section" id="projects-section">
           <div class="section-header">
             <div class="section-title">
-              📋 Projects <span class="section-count" id="project-count">-</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> Projects <span class="section-count" id="project-count">-</span>
             </div>
             <button class="btn btn-small" onclick="fetchProjects()" title="Refresh projects">
               ↻
@@ -983,7 +983,9 @@
               <!-- Daily Files -->
               <div class="vital-card">
                 <div class="vital-header">
-                  <span class="vital-label">📅 Daily Notes</span>
+                  <span class="vital-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg> Daily Notes
+                </span>
                 </div>
                 <div class="vital-detail" style="margin-top: 8px">
                   <div class="vital-detail-item">
@@ -1030,16 +1032,19 @@
         <div class="section" id="cerebro-section">
           <div class="section-header">
             <div class="section-title">
-              🔮 Cerebro <span class="section-count" id="cerebro-count">0 topics</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> Cerebro <span class="section-count" id="cerebro-count">0 topics</span>
             </div>
             <!-- SSE provides live updates -->
+            <span id="cerebro-sse-status" style="font-size: 0.7rem; color: var(--text-muted); margin-left: auto; margin-right: 8px;"></span>
           </div>
 
           <div id="cerebro-content">
             <!-- Not Initialized State -->
             <div id="cerebro-not-initialized" class="vitals-panel" style="display: none">
               <div style="text-align: center; padding: 40px 20px">
-                <div style="font-size: 3rem; margin-bottom: 16px">🔮</div>
+                <div style="font-size: 3rem; margin-bottom: 16px">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                </div>
                 <h3 style="font-size: 1.2rem; font-weight: 600; margin-bottom: 8px">
                   Cerebro Not Initialized
                 </h3>
@@ -1164,10 +1169,12 @@
                   Last updated: <span id="cerebro-last-updated">-</span>
                 </span>
                 <a
-                  href="file://#"
-                  style="font-size: 0.75rem; color: var(--accent); text-decoration: none"
+                  href="javascript:void(0)"
+                  onclick="openCerebroFolder()"
+                  style="font-size: 0.75rem; color: var(--accent); text-decoration: none; cursor: pointer"
+                  title="Open ~/cerebro/ in terminal"
                 >
-                  📁 Open cerebro/
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> Open cerebro/
                 </a>
               </div>
             </div>
@@ -2498,7 +2505,9 @@
             operatorsEl,
             `
                     <div class="empty-state">
-                        <div class="empty-state-icon">👥</div>
+                        <div class="empty-state-icon">
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
                         <div class="empty-state-text">No operators configured</div>
                         <div class="empty-state-hint" style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
                             Operators are auto-detected from session activity
@@ -3253,10 +3262,12 @@
         const visibleTopicsCount = allTopics.length - hiddenTopicsCount;
 
         // Update counts with hidden breakdown (updates dynamically on hide/unhide)
+        const totalTopics = cerebro.topics.total || 0;
+        const topicLabel = totalTopics === 1 ? "topic" : "topics";
         const countText =
           hiddenTopicsCount > 0
-            ? `${cerebro.topics.total} topics (${visibleTopicsCount} visible, ${hiddenTopicsCount} hidden)`
-            : `${cerebro.topics.total} topics`;
+            ? `${totalTopics} ${topicLabel} (${visibleTopicsCount} visible, ${hiddenTopicsCount} hidden)`
+            : `${totalTopics} ${topicLabel}`;
         $set("cerebro-count", "textContent", countText);
         $set("nav-cerebro-count", "textContent", cerebro.topics.total);
 
@@ -4396,7 +4407,7 @@
             sseConnected = false;
             eventSource.close();
             eventSource = null;
-            setConnectionStatus("disconnected", "🔴 Disconnected");
+            setConnectionStatus("disconnected", "\u25CB Disconnected");
 
             // Exponential backoff for reconnection
             sseReconnectAttempts++;
@@ -4697,11 +4708,38 @@
           if (data.success) {
             showToast("🧹 " + data.output, "success");
           } else {
-            showToast("❌ Cleanup failed: " + (data.error || data.output), "error");
+            showToast("\u26A0\uFE0F " + data.output, "success");
+          } else {
+            showToast("\u274C Cleanup failed: " + (data.error || data.output), "error");
           }
         } catch (e) {
-          showToast("❌ Cleanup error: " + e.message, "error");
+          showToast("\u274C Cleanup error: " + e.message, "error");
         }
+      }
+
+      function openCerebroFolder() {
+        // Open ~/cerebro/ in terminal using xdg-open (Linux) or open (macOS)
+        const cerebroPath = expandPath("~/cerebro");
+        fetch("/api/action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "open-path",
+            path: cerebroPath
+          })
+        }).then(r => r.json()).then(data => {
+          if (!data.success) showToast("Could not open cerebro/ — try: cd ~/cerebro", "error");
+        }).catch(() => {
+          // Fallback: try xdg-open directly via a popup
+          const termCmd = navigator.userAgent.includes("Mac") ? "open" : "xdg-open";
+          window.open(`bash:${termCmd} ${encodeURIComponent(cerebroPath)}`, "_blank");
+        });
+      }
+
+      function toggleCpuDetails() {
+        const details = document.getElementById("cpu-details");
+        if (!details) return;
+        details.style.display = details.style.display === "none" ? "block" : "none";
       }
 
       // Toast notifications
@@ -4802,3 +4840,30 @@
     <div id="toast-container" class="toast-container"></div>
   </body>
 </html>
+t.addEventListener("DOMContentLoaded", init);
+      } else {
+        setTimeout(init, 0);
+      }
+    </script>
+
+    <!-- Toast notifications container -->
+    <div id="toast-container" class="toast-container"></div>
+  </body>
+</html>
+er("DOMContentLoaded", init);
+      } else {
+        setTimeout(init, 0);
+      }
+    </script>
+
+    <!-- Toast notifications container -->
+    <div id="toast-container" class="toast-container"></div>
+  </body>
+</html>
+iv id="toast-container" class="toast-container"></div>
+  </body>
+</html>
+er"></div>
+  </body>
+</html>
+tml>

@@ -287,7 +287,7 @@ function getCostBreakdown(config, getSessions, getOpenClawDir) {
 
   const windows = {};
   for (const [key, windowConfig] of Object.entries(windowConfigs)) {
-    const bucket = usage.windows?.[key] || usage;
+    const bucket = (usage.windows && usage.windows[key]) ? usage.windows[key] : usage;
     const bucketCosts = calculateCostForBucket(bucket);
     const dailyAvg = bucketCosts.totalCost / windowConfig.days;
     const monthlyProjected = dailyAvg * 30;
@@ -373,7 +373,8 @@ function getTopSessionsByTokens(limit = 5, getSessions) {
 }
 
 // Calculate aggregate token stats
-function getTokenStats(sessions, capacity, config = {}) {
+// getOpenClawDir is needed to fetch real token usage from JSONL files
+function getTokenStats(sessions, capacity, config = {}, getOpenClawDir = null) {
   // Use capacity data if provided, otherwise compute from sessions
   let activeMainCount = capacity?.main?.active ?? 0;
   let activeSubagentCount = capacity?.subagent?.active ?? 0;
@@ -399,7 +400,8 @@ function getTokenStats(sessions, capacity, config = {}) {
   }
 
   // Get accurate usage from JSONL files (includes all windows)
-  const usage = getDailyTokenUsage();
+  // Use getOpenClawDir if provided; otherwise fall back to no-arg (uses module-level stub)
+  const usage = getOpenClawDir ? getDailyTokenUsage(getOpenClawDir) : getDailyTokenUsage();
   const totalInput = usage?.input || 0;
   const totalOutput = usage?.output || 0;
   const total = totalInput + totalOutput;

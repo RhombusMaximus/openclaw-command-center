@@ -85,10 +85,13 @@
       .docs-table tbody tr:hover td { background: var(--card-hover); }
       .doc-name { font-weight: 500; max-width: 300px; }
       .doc-desc { color: var(--text-muted); font-size: 0.8rem; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .doc-date { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
       .doc-actions { display: flex; gap: 8px; }
       .action-btn { padding: 5px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.75rem; color: var(--text); cursor: pointer; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
       .action-btn:hover { border-color: var(--accent); color: var(--accent); }
       .action-btn.download:hover { border-color: var(--green); color: var(--green); }
+      .action-btn.download-docx { border-color: var(--border); }
+      .action-btn.download-docx:hover { border-color: var(--purple); color: var(--purple); }
 
       /* Loading */
       .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted); }
@@ -144,6 +147,7 @@
               <tr>
                 <th onclick="sortDocs('name')" class="sorted" id="th-name">Name <span class="sort-icon">↑</span></th>
                 <th onclick="sortDocs('description')" id="th-description">Description <span class="sort-icon">↑</span></th>
+                <th onclick="sortDocs('lastEdited')" id="th-lastEdited">Last Edited <span class="sort-icon">↑</span></th>
                 <th style="cursor:default">Actions</th>
               </tr>
             </thead>
@@ -171,6 +175,17 @@
         return text.length > len ? text.slice(0, len) + '…' : text;
       }
 
+      function formatDate(iso) {
+        if (!iso) return '—';
+        try {
+          const d = new Date(iso);
+          if (isNaN(d.getTime())) return '—';
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        } catch {
+          return '—';
+        }
+      }
+
       function filterDocs() {
         const q = document.getElementById('search-input').value.toLowerCase();
         filteredDocs = allDocs.filter(d =>
@@ -189,8 +204,16 @@
         }
 
         filteredDocs.sort((a, b) => {
-          const va = (a[field] || '').toLowerCase();
-          const vb = (b[field] || '').toLowerCase();
+          let va = a[field] || '';
+          let vb = b[field] || '';
+          // lastEdited is an ISO date string — compare as dates
+          if (field === 'lastEdited') {
+            va = va ? new Date(va).getTime() : 0;
+            vb = vb ? new Date(vb).getTime() : 0;
+          } else {
+            va = va.toLowerCase();
+            vb = vb.toLowerCase();
+          }
           if (va < vb) return sortAsc ? -1 : 1;
           if (va > vb) return sortAsc ? 1 : -1;
           return 0;
@@ -242,9 +265,11 @@
           <tr>
             <td class="doc-name">${escapeHtml(doc.name)}</td>
             <td class="doc-desc" title="${escapeHtml(doc.description || '')}">${escapeHtml(snippet(doc.description))}</td>
+            <td class="doc-date">${doc.lastEdited ? escapeHtml(formatDate(doc.lastEdited)) : '—'}</td>
             <td class="doc-actions">
               ${doc.url ? `<a href="${escapeHtml(doc.url)}" target="_blank" rel="noopener" class="action-btn">🔗 Open</a>` : ''}
               <button class="action-btn download" onclick="downloadDoc('${escapeHtml(doc.id || doc.name)}', '${escapeHtml(doc.name)}')">💾 Download</button>
+              <button class="action-btn download-docx" onclick="downloadDocx('${escapeHtml(doc.id)}', '${escapeHtml(doc.name)}')">📄 Word</button>
             </td>
           </tr>
         `).join('');
@@ -264,6 +289,23 @@
           URL.revokeObjectURL(url);
         } catch (e) {
           console.error('Download failed:', e);
+        }
+      }
+
+      async function downloadDocx(id, name) {
+        try {
+          const res = await fetch(`/api/notion/documents/${encodeURIComponent(id)}/docx`);
+          if (!res.ok) throw new Error('Server error: ' + res.status);
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = (name || 'document') + '.docx';
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          console.error('DOCX download failed:', e);
+          alert('Failed to download Word document: ' + e.message);
         }
       }
 

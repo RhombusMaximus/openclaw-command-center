@@ -443,9 +443,239 @@ function getDocumentContent(id) {
   }
 }
 
+/**
+ * Render a single Notion block to docx paragraph
+ * @param {object} block - Notion block object
+ * @param {object} Document - docx Document class
+ * @returns {object} docx element or null
+ */
+function blockToDocx(block, Document) {
+  const type = block.type;
+  const content = block[type] || {};
+
+  const TextUtils = require("docx").TextUtils;
+  const makeBold = (text) => new Document.TextRun({ text, bold: true });
+  const makeItalic = (text) => new Document.TextRun({ text, italics: true });
+  const plainText = (richText) =>
+    richText
+      ?.map((t) => t.plain_text || "")
+      .join("") || "";
+
+  const richToRuns = (richText) => {
+    if (!richText || !richText.length) return [];
+    return richText.map((t) => {
+      const text = t.plain_text || "";
+      const styles = {};
+      if (t.annotations?.bold) styles.bold = true;
+      if (t.annotations?.italic) styles.italics = true;
+      if (t.annotations?.code) styles.highlight = true;
+      if (t.annotations?.strikethrough) styles.strike = true;
+      return new Document.TextRun({ text, ...styles });
+    });
+  };
+
+  switch (type) {
+    case "paragraph":
+      if (!content.rich_text?.length) return new Document.Paragraph({});
+      return new Document.Paragraph({ children: richToRuns(content.rich_text) });
+    case "heading_1":
+      return new Document.Heading(1, {
+        children: richToRuns(content.rich_text),
+      });
+    case "heading_2":
+      return new Document.Heading(2, {
+        children: richToRuns(content.rich_text),
+      });
+    case "heading_3":
+      return new Document.Heading(3, {
+        children: richToRuns(content.rich_text),
+      });
+    case "bulleted_list_item":
+      return new Document.BulletLevel({
+        children: richToRuns(content.rich_text),
+      });
+    case "numbered_list_item":
+      return new Document.NumberingLevel({
+        children: richToRuns(content.rich_text),
+      });
+    case "to_do": {
+      const checked = content.checked ? "☑" : "☐";
+      return new Document.Paragraph({
+        children: [
+          new Document.TextRun({ text: checked + " " }),
+          ...richToRuns(content.rich_text),
+        ],
+      });
+    }
+    case "toggle":
+      return new Document.Paragraph({
+        children: [
+          new Document.TextRun({ text: "▶ ", bold: true }),
+          ...richToRuns(content.rich_text),
+        ],
+      });
+    case "code":
+      return new Document.Paragraph({
+        children: [
+          new Document.TextRun({
+            text: content.rich_text?.map((t) => t.plain_text).join("") || "",
+            font: "Courier New",
+            size: 18,
+          }),
+        ],
+      });
+    case "quote":
+      return new Document.Paragraph({
+        children: richToRuns(content.rich_text),
+        heading: Document.HeadingLevel.HEADING_4,
+      });
+    case "callout":
+      return new Document.Paragraph({
+        children: [
+          new Document.TextRun({ text: "💡 " }),
+          ...richToRuns(content.rich_text),
+        ],
+      });
+    case "divider":
+      return new Document.Paragraph({
+        children: [new Document.TextRun({ text: "─────────────────────────────────" })],
+      });
+    case "image": {
+      const url = content.type === "external" ? content.external?.url : content.file?.url;
+      const caption = content.caption?.map((t) => t.plain_text).join("") || "image";
+      return new Document.Paragraph({
+        children: [new Document.TextRun({ text: `[Image: ${caption}](${url || ""})`, italics: true })],
+      });
+    }
+    case "video": {
+      const url = content.type === "external" ? content.external?.url : content.file?.url;
+      const caption = content.caption?.map((t) => t.plain_text).join("") || "video";
+      return new Document.Paragraph({
+        children: [new Document.TextRun({ text: `[Video: ${caption}](${url || ""})`, italics: true })],
+      });
+    }
+    case "bookmark":
+      return new Document.Paragraph({
+        children: [
+          new Document.TextRun({ text: `Bookmark: ${content.url}`, color: "0563C1", underline: {} }),
+        ],
+      });
+    default:
+      if (content.rich_text?.length) {
+        return new Document.Paragraph({ children: richToRuns(content.rich_text) });
+      }
+      return null;
+  }
+}
+
+/**
+ * Convert Notion blocks to docx document children
+ */
+function blocksToDocx(blocks, Document) {
+  const elements = [];
+  let inBulletList = false;
+  let inNumberedList = false;
+
+  for (const block of blocks) {
+    const type = block.type;
+
+    if (type === "bulleted_list_item") {
+      if (!inBulletList) {
+        elements.push(
+          new Document.BulletLevel({
+            children: [],
+            level: 0,
+          }),
+        );
+        inBulletList = true;
+      }
+      elements.push(blockToDocx(block, Document));
+    } else if (type === "numbered_list_item") {
+      if (!inNumberedList) {
+        elements.push(
+          new Document.NumberingLevel({
+            children: [],
+            level: 0,
+          }),
+        );
+        inNumberedList = true;
+      }
+      elements.push(blockToDocx(block, Document));
+    } else {
+      inBulletList = false;
+      inNumberedList = false;
+      const el = blockToDocx(block, Document);
+      if (el) elements.push(el);
+    }
+
+    // Process children recursively
+    if (block.has_children && block.children) {
+      const childElements = blocksToDocx(block.children, Document);
+      elements.push(...childElements);
+    }
+  }
+
+  return elements;
+}
+
+/**
+ * Get document content as a docx Buffer
+ * @param {string} id - Notion page ID
+ * @returns {Buffer} Word document buffer
+ */
+function getDocumentDocx(id) {
+  const { Document, Packer, Paragraph, TextRun, Heading, HeadingLevel, BulletLevel, NumberingLevel } = require("docx");
+
+  try {
+    const page = notionCurl("GET", `/pages/${id}`);
+    if (page.object === "error") {
+      return { error: page.message };
+    }
+
+    const props = page.properties || {};
+
+    // Find name
+    let name = "";
+    for (const [key, val] of Object.entries(props)) {
+      if (val.type === "title") {
+        name = val.title?.map((t) => t.plain_text).join("") || "";
+        break;
+      }
+    }
+
+    const blocks = getBlockChildren(id);
+
+    // Build docx elements
+    const children = [
+      new Document.Heading(1, { children: [new Document.TextRun({ text: name || "Untitled Document" })] }),
+    ];
+
+    const blockElements = blocksToDocx(blocks, Document);
+    children.push(...blockElements);
+
+    const doc = new Document({
+      title: name || "Untitled",
+      creator: "OpenClaw Command Center",
+      description: `Exported from Notion: ${name}`,
+      sections: [
+        {
+          properties: {},
+          children,
+        },
+      ],
+    });
+
+    return Packer.toBuffer(doc);
+  } catch (e) {
+    console.error("[Notion] getDocumentDocx error:", e.message);
+    return { error: e.message };
+  }
+}
+
 module.exports = {
   getProjects,
   getProject,
   getSpaceHQ,
   getDocumentContent,
+  getDocumentDocx,
 };

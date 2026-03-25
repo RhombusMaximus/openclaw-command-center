@@ -229,7 +229,7 @@ function serveStatic(req, res) {
 function handleApi(req, res) {
   const sessionsList = sessions.getSessions();
   const capacity = state.getCapacity();
-  const tokenStats = getTokenStats(sessionsList, capacity, CONFIG);
+  const tokenStats = getTokenStats(sessionsList, capacity, CONFIG, getOpenClawDir);
 
   const data = {
     sessions: sessionsList,
@@ -471,7 +471,7 @@ const server = http.createServer((req, res) => {
     const offset = (page - 1) * pageSize;
     const displaySessions = filteredSessions.slice(offset, offset + pageSize);
 
-    const tokenStats = getTokenStats(allSessions, state.getCapacity(), CONFIG);
+    const tokenStats = getTokenStats(allSessions, state.getCapacity(), CONFIG, getOpenClawDir);
     const capacity = state.getCapacity();
 
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -637,9 +637,26 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ documents }));
   } else if (pathname.startsWith("/api/notion/documents/")) {
     const id = pathname.replace("/api/notion/documents/", "");
-    const document = notion.getDocumentContent(id);
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(document));
+    // Check if requesting docx format
+    if (id.endsWith("/docx")) {
+      const docId = id.replace("/docx", "");
+      const bufOrError = notion.getDocumentDocx(docId);
+      if (bufOrError.error) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: bufOrError.error }));
+      } else {
+        const docName = `document-${Date.now()}.docx`;
+        res.writeHead(200, {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "Content-Disposition": `attachment; filename="${docName}"`,
+        });
+        res.end(bufOrError);
+      }
+    } else {
+      const document = notion.getDocumentContent(id);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(document));
+    }
   } else if (pathname === "/api/notion/calendar") {
     const cronJobs = getCronJobs(getOpenClawDir);
     const projects = notion.getProjects();

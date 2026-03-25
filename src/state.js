@@ -395,7 +395,7 @@ function createStateModule(deps) {
     }
     // Pass capacity to tokenStats so it can use the same active counts
     try {
-      tokenStats = getTokenStats(allSessions, capacity, CONFIG);
+      tokenStats = getTokenStats(allSessions, capacity, CONFIG, getOpenClawDir);
     } catch (e) {
       console.error("[State] tokenStats:", e.message);
     }

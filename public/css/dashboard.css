@@ -439,7 +439,7 @@ header {
   padding: 5px 10px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 6px;
   font-size: 0.75rem;
   color: var(--text-muted);
   cursor: pointer;
@@ -1649,24 +1649,27 @@ main {
 }
 
 /* Skeleton Loading States */
-@keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
   }
-  50% {
-    opacity: 0.7;
+  100% {
+    background-position: 200% 0;
   }
 }
 .skeleton {
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation: skeleton-shimmer 2s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--border) 25%, var(--card-hover) 50%, var(--border) 75%);
+  background-size: 200% 100%;
 }
 .skeleton-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  animation: skeleton-shimmer 2s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--card-bg) 25%, var(--card-hover) 50%, var(--card-bg) 75%);
+  background-size: 200% 100%;
 }
 .skeleton-bar {
   background: var(--border);
@@ -1942,4 +1945,15 @@ main {
 .quick-action-btn:hover {
   background: var(--card-hover);
   border-color: var(--accent);
+}
+.danger-action-btn {
+  border-color: var(--border);
+}
+.danger-action-btn:hover {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: #dc2626;
+  color: #ef4444;
+}
+.danger-action-btn svg {
+  stroke: #ef4444;
 }

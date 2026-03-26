@@ -1820,6 +1820,12 @@ main {
 .utilization-icon.openrouter {
   background: rgba(245, 158, 11, 0.2);
 }
+.utilization-icon.nvidia {
+  background: rgba(118, 185, 0, 0.2);
+}
+.utilization-icon.qwen {
+  background: rgba(234, 102, 153, 0.2);
+}
 .utilization-title {
   font-weight: 600;
   font-size: 0.9rem;

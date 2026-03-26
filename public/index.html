@@ -4593,7 +4593,7 @@
           // For flat-rate models, show token count and flat rate note
           // For per-token models, show tokens and estimated cost
           let statLine;
-          if (model === "minimax-m2.7:cloud" || model.startsWith("nemotron")) {
+          if (model === "minimax-m2.7:cloud" || model.startsWith("nemotron") || model.startsWith("qwen")) {
             statLine = `<span class="quota-stat-main">${formatTokenCount(totalTokens)} tokens</span><span class="quota-stat-sub">${reqs} reqs · ${meta.plan}</span>`;
           } else {
             const cost = data.cost > 0 ? `$${data.cost.toFixed(4)}` : "—";
@@ -4615,7 +4615,7 @@
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 2px;">
                   ${reqs} reqs
-                  ${model === "minimax-m2.7:cloud" || model.startsWith("nemotron") ? "· " + meta.plan : "· est. " + (data.cost > 0 ? "$" + data.cost.toFixed(4) : "—")}
+                  ${model === "minimax-m2.7:cloud" || model.startsWith("nemotron") || model.startsWith("qwen") ? "· " + meta.plan : "· est. " + (data.cost > 0 ? "$" + data.cost.toFixed(4) : "—")}
                 </div>
               </div>
               <div style="margin-top: 8px; font-size: 0.7rem; color: var(--text-muted, #8b949e);">

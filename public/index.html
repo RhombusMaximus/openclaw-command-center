@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/dashboard.css" />
     <script src="js/lib/morphdom.min.js"></script>
     <script src="js/i18n.js"></script>
+    <script src="js/app.js"></script>
     <!-- Shared Sidebar Loader -->
     <script src="js/sidebar.js"></script>
   </head>
@@ -304,7 +305,7 @@
                     <span class="vital-detail-label">used</span>
                   </div>
                   <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="context-limit">128k</span>
+                    <span class="vital-detail-value" id="context-limit">200k</span>
                     <span class="vital-detail-label">limit</span>
                   </div>
                 </div>
@@ -2023,7 +2024,7 @@
           (s) => s.sessionKey === "agent:main:main" || s.label?.includes("Main Session"),
         );
         const tokens = mainSession?.tokens || 0;
-        const contextLimit = 128000; // 128k tokens
+        const contextLimit = 200000; // 200k tokens
         const nearLimitThreshold = Math.floor(contextLimit * 0.80); // 80% threshold
 
         // Cached tokens from session (if available)
@@ -2129,10 +2130,12 @@
       // Unified state fetch - single API call for all dashboard data
       async function fetchData() {
         try {
+          console.log("[DEBUG] fetchData() called");
           const response = await fetch("/api/state");
+          console.log("[DEBUG] /api/state response:", response.status);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const state = await response.json();
-          renderFullState(state);
+          const data = await response.json();
+          renderFullState(data);
         } catch (e) {
           console.error("Failed to fetch state:", e);
           // Fallback: try individual fetches if unified fails
@@ -2227,9 +2230,15 @@
 
       // Render just sessions (for progressive loading)
       function renderSessions(sessions, pagination, statusCounts) {
+        window._lastRenderSessions = sessions.length;
         const sessionsEl = document.getElementById("sessions");
         sessionsData = sessions;
-
+        const mdb = document.getElementById("mega-debug");
+        if (mdb) mdb.textContent = "RENDER: sessions=" + sessions.length + " el=" + (!!sessionsEl);
+        // Visible debug counter
+        const debugEl = document.getElementById("sessions-debug");
+        if (debugEl) { debugEl.textContent = "RENDERED:" + sessions.length; debugEl.style.display = "block"; }
+        if (sessionsEl) sessionsEl.setAttribute("data-sessions", sessions.length);
         // Update pagination state if provided
         if (pagination) {
           paginationState = { ...paginationState, ...pagination };
@@ -2631,6 +2640,7 @@
 
       // Render capacity indicators
       function renderCapacity(capacity) {
+        console.log("[DEBUG] renderCapacity called:", capacity);
         if (!capacity) return;
         const mainEl = document.getElementById("main-capacity");
         const subEl = document.getElementById("subagent-capacity");
@@ -2847,6 +2857,7 @@
       }
 
       function renderLlmUsage(data) {
+        console.log("[DEBUG] renderLlmUsage called, sonnet:", data?.claude?.sonnet);
         // Wrap in try-catch to prevent crashes from blocking other renders
         try {
           // Handle auth errors - show clear error state instead of 0%
@@ -4410,6 +4421,12 @@
       }
 
       function handleSSEUpdate(data) {
+        console.log("[DEBUG] handleSSEUpdate called, sessions:", data?.sessions?.length, "cron:", data?.cron?.length, "keys:", Object.keys(data||{}).join(","));
+        const mdb = document.getElementById("mega-debug");
+        if (mdb) mdb.textContent = "SSE:" + (data?.sessions?.length || 0) + " | cron:" + (data?.cron?.length || 0) + " | ctx:" + (data?.tokenStats?.estCost || "?");
+        // Visible debug
+        const dbg = document.getElementById("debug-info");
+        if (dbg) dbg.textContent = "SSE:" + (data?.sessions?.length || 0);
         // Update timestamp with live indicator
         const now = new Date().toLocaleTimeString();
         document.getElementById("last-updated").textContent = now + " ⚡";
@@ -4420,6 +4437,7 @@
         );
 
         // Render full state (unified approach)
+        console.log("[DEBUG] Calling renderFullState, capacity:", data?.capacity, "llmUsage:", data?.llmUsage ? "present" : "missing");
         renderFullState(data);
       }
 
@@ -4714,6 +4732,9 @@
 
       // Init - try SSE first, fall back to polling
       async function init() {
+        console.log("[INIT] init() called");
+        const mdb = document.getElementById("mega-debug");
+        if (mdb) mdb.textContent = "INIT RUNNING...";
         // Load privacy settings from server first (before rendering any data)
         await loadPrivacyFromServer();
         console.log("[Privacy] Settings loaded from server");

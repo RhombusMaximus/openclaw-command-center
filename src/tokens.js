@@ -2,13 +2,37 @@ const fs = require("fs");
 const path = require("path");
 const { formatNumber, formatTokens } = require("./utils");
 
-// Claude Opus 4 pricing (per 1M tokens)
-const TOKEN_RATES = {
-  input: 15.0, // $15/1M input tokens
-  output: 75.0, // $75/1M output tokens
-  cacheRead: 1.5, // $1.50/1M (90% discount from input)
-  cacheWrite: 18.75, // $18.75/1M (25% premium on input)
+// Reasonable neutral defaults (mid-range, avoids wild overestimates)
+// Actual rates should be set via billing.modelRates in config or env vars
+// For MiniMax m2.7: input ~$0.001/1M, output ~$0.01/1M
+const DEFAULT_TOKEN_RATES = {
+  input: 0.5, // $0.50/1M input (mid-range neutral)
+  output: 2.0, // $2.00/1M output (mid-range neutral)
+  cacheRead: 0.05, // $0.05/1M
+  cacheWrite: 0.125, // $0.125/1M
 };
+
+// MiniMax m2.7 approximate rates (if MINIMAX_TOKEN_RATES env is set)
+const MINIMAX_TOKEN_RATES = {
+  input: 0.001, // ~$0.001/1M (very cheap)
+  output: 0.01, // ~$0.01/1M
+  cacheRead: 0.0001,
+  cacheWrite: 0.0002,
+};
+
+// Active TOKEN_RATES — start with defaults, check env var override
+let TOKEN_RATES = { ...DEFAULT_TOKEN_RATES };
+if (process.env.MINIMAX_TOKEN_RATES === "true") {
+  TOKEN_RATES = { ...MINIMAX_TOKEN_RATES };
+} else if (process.env.TOKEN_RATE_INPUT) {
+  // Allow individual rate overrides via env vars
+  TOKEN_RATES = {
+    input: parseFloat(process.env.TOKEN_RATE_INPUT) || DEFAULT_TOKEN_RATES.input,
+    output: parseFloat(process.env.TOKEN_RATE_OUTPUT) || DEFAULT_TOKEN_RATES.output,
+    cacheRead: parseFloat(process.env.TOKEN_RATE_CACHE_READ) || DEFAULT_TOKEN_RATES.cacheRead,
+    cacheWrite: parseFloat(process.env.TOKEN_RATE_CACHE_WRITE) || DEFAULT_TOKEN_RATES.cacheWrite,
+  };
+}
 
 // Token usage cache with async background refresh
 let tokenUsageCache = { data: null, timestamp: 0, refreshing: false };
@@ -32,6 +56,13 @@ function getRatesForModel(model, modelRates) {
     if (key !== "__default__" && model && model.includes(key)) return rates;
   }
   return modelRates.__default__ || TOKEN_RATES;
+}
+
+// Set custom rates (called by config loader if billing.modelRates is set)
+function setTokenRates(rates) {
+  if (rates) {
+    TOKEN_RATES = { ...DEFAULT_TOKEN_RATES, ...rates };
+  }
 }
 
 // Track per-model token usage (for provider cards)
@@ -271,8 +302,14 @@ function getCostBreakdown(config, getSessions, getOpenClawDir) {
     return { error: "Failed to get usage data" };
   }
 
+  // Resolve rates: use config.billing.modelRates if provided, otherwise TOKEN_RATES
+  const modelRates = config?.billing?.modelRates;
+  const effectiveRates = modelRates && Object.keys(modelRates).length > 0
+    ? modelRates.__default__ || Object.values(modelRates)[0]
+    : TOKEN_RATES;
+
   // Calculate costs for 24h (primary display)
-  const costs = calculateCostForBucket(usage);
+  const costs = calculateCostForBucket(usage, effectiveRates);
 
   // Get plan info from config
   const planCost = config.billing?.claudePlanCost || 200;
@@ -320,12 +357,12 @@ function getCostBreakdown(config, getSessions, getOpenClawDir) {
     cacheWrite: usage.cacheWrite,
     requests: usage.requests,
 
-    // Pricing rates
+    // Pricing rates (show the rates actually used)
     rates: {
-      input: TOKEN_RATES.input.toFixed(2),
-      output: TOKEN_RATES.output.toFixed(2),
-      cacheRead: TOKEN_RATES.cacheRead.toFixed(2),
-      cacheWrite: TOKEN_RATES.cacheWrite.toFixed(2),
+      input: effectiveRates.input.toFixed(4),
+      output: effectiveRates.output.toFixed(4),
+      cacheRead: effectiveRates.cacheRead.toFixed(4),
+      cacheWrite: effectiveRates.cacheWrite.toFixed(4),
     },
 
     // Cost calculation breakdown (24h)
@@ -406,8 +443,14 @@ function getTokenStats(sessions, capacity, config = {}, getOpenClawDir = null) {
   const totalOutput = usage?.output || 0;
   const total = totalInput + totalOutput;
 
-  // Calculate cost using shared helper
-  const costs = calculateCostForBucket(usage);
+  // Resolve rates: use config.billing.modelRates if provided, otherwise TOKEN_RATES
+  const modelRates = config?.billing?.modelRates;
+  const effectiveRates = modelRates && Object.keys(modelRates).length > 0
+    ? modelRates.__default__ || Object.values(modelRates)[0]
+    : TOKEN_RATES;
+
+  // Calculate cost using shared helper with effective rates
+  const costs = calculateCostForBucket(usage, effectiveRates);
   const estCost = costs.totalCost;
 
   // Calculate savings vs plan cost (compare monthly to monthly)
@@ -434,7 +477,7 @@ function getTokenStats(sessions, capacity, config = {}, getOpenClawDir = null) {
     // Map '3dma' -> '3d' for bucket lookup
     const bucketKey = key.replace("dma", "d").replace("24h", "24h");
     const bucket = usage.windows?.[bucketKey === "24h" ? "24h" : bucketKey] || usage;
-    const bucketCosts = calculateCostForBucket(bucket);
+    const bucketCosts = calculateCostForBucket(bucket, effectiveRates);
     const dailyAvg = bucketCosts.totalCost / windowConfig.days;
     const monthlyProjected = dailyAvg * 30;
     const windowSavings = monthlyProjected - planCost;
@@ -442,8 +485,8 @@ function getTokenStats(sessions, capacity, config = {}, getOpenClawDir = null) {
 
     savingsWindows[key] = {
       label: windowConfig.label,
-      estCost: `$${formatNumber(dailyAvg)}`,
-      estMonthlyCost: `$${Math.round(monthlyProjected).toLocaleString()}`,
+      estCost: dailyAvg < 0.01 ? `$${dailyAvg.toFixed(4)}` : `$${formatNumber(dailyAvg)}`,
+      estMonthlyCost: monthlyProjected < 1 ? `$${monthlyProjected.toFixed(2)}` : `$${Math.round(monthlyProjected).toLocaleString()}`,
       estSavings: windowSavingsPositive ? `$${formatNumber(windowSavings)}/mo` : null,
       savingsPercent: windowSavingsPositive
         ? Math.round((windowSavings / monthlyProjected) * 100)
@@ -470,12 +513,12 @@ function getTokenStats(sessions, capacity, config = {}, getOpenClawDir = null) {
     // 24h savings (backward compatible)
     estSavings: savingsPositive ? `$${formatNumber(monthlySavings)}/mo` : null,
     savingsPercent: savingsPositive ? Math.round((monthlySavings / monthlyApiCost) * 100) : 0,
-    estMonthlyCost: `$${Math.round(monthlyApiCost).toLocaleString()}`,
+    estMonthlyCost: monthlyApiCost < 1 ? `$${monthlyApiCost.toFixed(2)}` : `$${Math.round(monthlyApiCost).toLocaleString()}`,
     // Multi-window savings (24h, 3da, 7da)
     savingsWindows,
     // Per-session averages
     avgTokensPerSession: formatTokens(avgTokensPerSession),
-    avgCostPerSession: `$${avgCostPerSession.toFixed(2)}`,
+    avgCostPerSession: estCost < 0.01 ? "$0.00" : `$${avgCostPerSession.toFixed(4)}`,
     sessionCount,
   };
 }

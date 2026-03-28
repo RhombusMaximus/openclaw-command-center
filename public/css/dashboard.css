@@ -439,7 +439,7 @@ header {
   padding: 5px 10px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 16px;
   font-size: 0.75rem;
   color: var(--text-muted);
   cursor: pointer;
@@ -1386,17 +1386,17 @@ main {
   transition: height 0.3s ease;
 }
 
-/* Context Meter */
-.context-display {
+/* Temperature */
+.temp-display {
   display: flex;
   align-items: baseline;
   gap: 4px;
 }
-.context-value {
+.temp-value {
   font-size: 1.5rem;
   font-weight: 700;
 }
-.context-unit {
+.temp-unit {
   font-size: 0.9rem;
   color: var(--text-muted);
 }
@@ -1649,27 +1649,24 @@ main {
 }
 
 /* Skeleton Loading States */
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
+@keyframes skeleton-pulse {
+  0%,
   100% {
-    background-position: 200% 0;
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
   }
 }
 .skeleton {
-  animation: skeleton-shimmer 2s ease-in-out infinite;
-  background: linear-gradient(90deg, var(--border) 25%, var(--card-hover) 50%, var(--border) 75%);
-  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 .skeleton-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
-  animation: skeleton-shimmer 2s ease-in-out infinite;
-  background: linear-gradient(90deg, var(--card-bg) 25%, var(--card-hover) 50%, var(--card-bg) 75%);
-  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 .skeleton-bar {
   background: var(--border);
@@ -1811,21 +1808,6 @@ main {
 .utilization-icon.openai {
   background: rgba(16, 163, 127, 0.2);
 }
-.utilization-icon.minimax {
-  background: rgba(148, 0, 211, 0.2);
-}
-.utilization-icon.google {
-  background: rgba(66, 133, 244, 0.2);
-}
-.utilization-icon.openrouter {
-  background: rgba(245, 158, 11, 0.2);
-}
-.utilization-icon.nvidia {
-  background: rgba(118, 185, 0, 0.2);
-}
-.utilization-icon.qwen {
-  background: rgba(234, 102, 153, 0.2);
-}
 .utilization-title {
   font-weight: 600;
   font-size: 0.9rem;
@@ -1951,15 +1933,4 @@ main {
 .quick-action-btn:hover {
   background: var(--card-hover);
   border-color: var(--accent);
-}
-.danger-action-btn {
-  border-color: var(--border);
-}
-.danger-action-btn:hover {
-  background: rgba(220, 38, 38, 0.12);
-  border-color: #dc2626;
-  color: #ef4444;
-}
-.danger-action-btn svg {
-  stroke: #ef4444;
 }

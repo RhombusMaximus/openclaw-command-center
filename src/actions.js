@@ -5,6 +5,7 @@ const ALLOWED_ACTIONS = new Set([
   "cron-list",
   "health-check",
   "clear-stale-sessions",
+  "prune-stale",
 ]);
 
 function executeAction(action, deps) {
@@ -51,18 +52,43 @@ function executeAction(action, deps) {
         results.success = true;
         break;
       }
-      case "clear-stale-sessions": {
+      case "clear-stale-sessions":
+      case "prune-stale": {
+        // Try to read session files and count stale sessions
         const staleOutput = runOpenClaw("sessions --json 2>&1");
         let staleCount = 0;
+        let staleKeys = [];
         try {
           const staleJson = extractJSON(staleOutput);
           if (staleJson) {
             const data = JSON.parse(staleJson);
-            staleCount = (data.sessions || []).filter((s) => s.ageMs > 24 * 60 * 60 * 1000).length;
+            (data.sessions || []).forEach((s) => {
+              if (s.ageMs > 24 * 60 * 60 * 1000) {
+                staleCount++;
+                if (s.key) staleKeys.push(s.key);
+              }
+            });
           }
         } catch (e) {}
-        results.output = `Found ${staleCount} stale sessions (>24h old).\nTo clean: openclaw sessions prune`;
-        results.success = true;
+
+        if (action === "prune-stale") {
+          if (staleCount === 0) {
+            results.output = "✅ No stale sessions found (all sessions < 24h old)";
+            results.success = true;
+          } else {
+            results.output = `🧹 Found ${staleCount} stale session${staleCount > 1 ? "s" : ""} (>24h old)\nTo clean, run: openclaw sessions cleanup --enforce`;
+            results.success = true;
+          }
+          break;
+        }
+        // clear-stale-sessions
+        if (staleCount === 0) {
+          results.output = "✅ No stale sessions to clear";
+          results.success = true;
+        } else {
+          results.output = `Found ${staleCount} stale session${staleCount > 1 ? "s" : ""} (>24h old)\nTo clear: openclaw sessions prune`;
+          results.success = true;
+        }
         break;
       }
     }

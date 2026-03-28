@@ -19,6 +19,7 @@ const state = {
   capacity: { main: { active: 0, max: 12 }, subagent: { active: 0, max: 24 } },
   operators: { operators: [], roles: {} },
   llmUsage: null,
+  modelUsage: null,
   cron: [],
   memory: null,
   cerebro: null,
@@ -96,6 +97,7 @@ function handleStateUpdate(data) {
   if (data.capacity) state.capacity = data.capacity;
   if (data.operators) state.operators = data.operators;
   if (data.llmUsage) state.llmUsage = data.llmUsage;
+  if (data.modelUsage) state.modelUsage = data.modelUsage;
   if (data.cron) state.cron = data.cron;
   if (data.memory) state.memory = data.memory;
   if (data.cerebro) state.cerebro = data.cerebro;
@@ -116,6 +118,7 @@ function renderAll() {
   renderVitals();
   renderTokenStats();
   renderLlmUsage();
+  renderModelUsage();
   renderSessions();
   renderCron();
   renderMemory();
@@ -195,21 +198,144 @@ function renderTokenStats() {
   if (!state.tokenStats) return;
   const t = state.tokenStats;
 
-  setText("stat-total-tokens", t.total || "-");
-  setText("stat-input", t.input || "-");
-  setText("stat-output", t.output || "-");
-  setText("stat-active", t.activeCount || "0");
-  setText("stat-cost", t.estCost || "-");
-  setText("stat-main", `${t.activeMainCount || 0}/${t.mainLimit || 12}`);
-  setText("stat-subagents", `${t.activeSubagentCount || 0}/${t.subagentLimit || 24}`);
+  // Top-row stats bar (IDs in HTML: total-tokens, input-tokens, output-tokens, active-sessions, est-cost)
+  setText("total-tokens", t.total || "-");
+  setText("input-tokens", t.input || "-");
+  setText("output-tokens", t.output || "-");
+  setText("active-sessions", t.activeCount || "0");
+  setText("est-cost", t.estCost || "-");
+
+  // Capacity row (IDs: main-capacity, subagent-capacity)
+  setText("main-capacity", `${t.activeMainCount || 0}/${t.mainLimit || 12}`);
+  setText("subagent-capacity", `${t.activeSubagentCount || 0}/${t.subagentLimit || 24}`);
+
+  // Savings stat (only shows if there are savings)
+  const savingsStat = document.getElementById("savings-stat");
+  if (savingsStat) {
+    if (t.estSavings) {
+      savingsStat.style.display = "";
+      setText("est-savings", t.estSavings);
+    } else {
+      savingsStat.style.display = "none";
+    }
+  }
 }
 
 function renderLlmUsage() {
-  // Placeholder - will be extracted to component
+  // Delegate to the full implementation in index.html (if available)
+  if (typeof window.renderLlmUsage === "function" && arguments[0] !== void 0) {
+    // Called with data directly (legacy call path from embedded script)
+    window.renderLlmUsage(arguments[0]);
+  } else if (state.llmUsage) {
+    // Called from renderAll() — pass the stored state
+    window.renderLlmUsage(state.llmUsage);
+  }
 }
 
 function renderSessions() {
   // Placeholder - will be extracted to component
+}
+
+// Render per-model usage cards
+function renderModelUsage() {
+  const modelsSection = document.getElementById("models-section");
+  const modelsContent = document.getElementById("models-content");
+  const modelCount = document.getElementById("model-count");
+  if (!modelsSection || !modelsContent) return;
+
+  const modelUsage = state.modelUsage;
+  if (!modelUsage || Object.keys(modelUsage).length === 0) {
+    modelsSection.style.display = "none";
+    return;
+  }
+
+  modelsSection.style.display = "block";
+  const models = Object.entries(modelUsage);
+  modelCount.textContent = models.length;
+
+  // Group by provider
+  const providerIcons = {
+    minimax: "🤖",
+    anthropic: "🧠",
+    openai: "⚡",
+    ollama: "🦞",
+    google: "🔵",
+  };
+
+  const providerNames = {
+    minimax: "MiniMax",
+    anthropic: "Anthropic Claude",
+    openai: "OpenAI",
+    ollama: "Ollama",
+    google: "Google",
+  };
+
+  const html = `<div class="vitals-panel"><div class="vitals-grid">` +
+    models.map(([model, data]) => {
+      const provider = Object.keys(providerNames).find(p => model.includes(p)) || "other";
+      const icon = providerIcons[provider] || "🤖";
+      const providerName = providerNames[provider] || model.split("/")[0] || "Unknown";
+      const modelShort = model.includes(":") ? model.split(":")[1] : model;
+
+      const inputFormatted = data.input >= 1000000
+        ? (data.input / 1000000).toFixed(2) + "M"
+        : data.input >= 1000
+          ? (data.input / 1000).toFixed(1) + "k"
+          : data.input.toLocaleString();
+      const outputFormatted = data.output >= 1000000
+        ? (data.output / 1000000).toFixed(2) + "M"
+        : data.output >= 1000
+          ? (data.output / 1000).toFixed(1) + "k"
+          : data.output.toLocaleString();
+      const cacheFormatted = (data.cacheRead + data.cacheWrite) > 0
+        ? ((data.cacheRead + data.cacheWrite) >= 1000000
+            ? ((data.cacheRead + data.cacheWrite) / 1000000).toFixed(2) + "M"
+            : ((data.cacheRead + data.cacheWrite) / 1000).toFixed(1) + "k")
+        : "0";
+      const totalTokens = (data.input || 0) + (data.output || 0);
+
+      // If actual cost is stored, use it; otherwise estimate
+      const costDisplay = data.cost > 0
+        ? `$${data.cost.toFixed(4)}`
+        : data.requests > 0
+          ? `~$${((data.input / 1000000 * 0.5) + (data.output / 1000000 * 2)).toFixed(4)}`
+          : "$0.00";
+
+      return `
+        <div class="vital-card">
+          <div class="vital-header">
+            <span class="vital-label">${icon} ${providerName}</span>
+            <span class="vital-value" style="font-size:0.75rem">${modelShort}</span>
+          </div>
+          <div class="vital-detail" style="margin-top: 8px">
+            <div class="vital-detail-item">
+              <span class="vital-detail-value">${inputFormatted}</span>
+              <span class="vital-detail-label">input</span>
+            </div>
+            <div class="vital-detail-item">
+              <span class="vital-detail-value">${outputFormatted}</span>
+              <span class="vital-detail-label">output</span>
+            </div>
+            <div class="vital-detail-item">
+              <span class="vital-detail-value">${cacheFormatted}</span>
+              <span class="vital-detail-label">cache</span>
+            </div>
+          </div>
+          <div style="margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px">
+            <div class="vital-detail-item">
+              <span class="vital-detail-value">${data.requests}</span>
+              <span class="vital-detail-label">requests</span>
+            </div>
+            <div class="vital-detail-item">
+              <span class="vital-detail-value">${costDisplay}</span>
+              <span class="vital-detail-label">cost</span>
+            </div>
+          </div>
+        </div>`;
+    }).join("") +
+    `</div></div>`;
+
+  modelsContent.innerHTML = html;
 }
 
 function renderCron() {

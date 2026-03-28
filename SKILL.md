@@ -1,7 +1,7 @@
 ---
-name: command-center
+name: custom-command-center
 version: 1.5.0
-description: Mission control dashboard for OpenClaw - real-time session monitoring, LLM usage tracking, cost intelligence, and system vitals. View all your AI agents in one place.
+description: Custom RhomBot fork — Mission control dashboard for OpenClaw - real-time session monitoring, LLM usage tracking, cost intelligence, and system vitals. View all your AI agents in one place.
 metadata:
   openclaw:
     requires:
@@ -9,11 +9,11 @@ metadata:
     install:
       - id: start
         kind: shell
-        command: "node lib/server.js"
-        label: "Start Command Center (http://localhost:3333)"
+        command: "cd skills/custom-command-center && node lib/server.js"
+        label: "Start Custom Command Center (http://localhost:3333)"
 ---
 
-# OpenClaw Command Center
+# Custom Command Center (RhomBot Fork)
 
 Mission control for your AI workforce.
 

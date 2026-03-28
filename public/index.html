@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="css/dashboard.css" />
     <script src="js/lib/morphdom.min.js"></script>
     <script src="js/i18n.js"></script>
-    <script src="js/app.js"></script>
     <!-- Shared Sidebar Loader -->
     <script src="js/sidebar.js"></script>
   </head>
@@ -154,50 +153,59 @@
             </div>
             <div class="vitals-grid">
               <!-- CPU -->
-              <div class="vital-card" id="cpu-card" onclick="toggleCpuDetails()" style="cursor:pointer" title="Click to toggle details">
+              <div class="vital-card">
                 <div class="vital-header">
-                  <span class="vital-label">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> CPU
-                  </span>
+                  <span class="vital-label">⚡ CPU</span>
                   <span class="vital-value" id="cpu-percent">-%</span>
                 </div>
+                <div
+                  id="cpu-chip"
+                  style="font-size: 0.7rem; color: var(--accent); margin-bottom: 8px"
+                ></div>
                 <div class="vital-bar">
                   <div class="vital-bar-fill blue" id="cpu-bar" style="width: 0%"></div>
                 </div>
-                <div id="cpu-details" style="display:none; margin-top: 8px">
-                  <div class="vital-detail" style="margin-bottom: 6px">
-                    <div class="vital-detail-item">
-                      <span class="vital-detail-value" id="cpu-user">-%</span>
-                      <span class="vital-detail-label">user</span>
-                    </div>
-                    <div class="vital-detail-item">
-                      <span class="vital-detail-value" id="cpu-sys">-%</span>
-                      <span class="vital-detail-label">sys</span>
-                    </div>
-                    <div class="vital-detail-item">
-                      <span class="vital-detail-value" id="cpu-idle">-%</span>
-                      <span class="vital-detail-label">idle</span>
-                    </div>
+                <div class="vital-detail" style="margin-bottom: 8px">
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="cpu-user">-%</span>
+                    <span class="vital-detail-label">user</span>
                   </div>
-                  <div class="vital-detail">
-                    <div class="vital-detail-item">
-                      <span class="vital-detail-value" id="cpu-load-1">-</span>
-                      <span class="vital-detail-label">1m</span>
-                    </div>
-                    <div class="vital-detail-item">
-                      <span class="vital-detail-value" id="cpu-load-5">-</span>
-                      <span class="vital-detail-label">5m</span>
-                    </div>
-                    <div class="vital-detail-item">
-                      <span class="vital-detail-value" id="cpu-load-15">-</span>
-                      <span class="vital-detail-label">15m</span>
-                    </div>
-                    <div class="vital-detail-item">
-                      <span class="vital-detail-value" id="cpu-cores">-</span>
-                      <span class="vital-detail-label">cores</span>
-                    </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="cpu-sys">-%</span>
+                    <span class="vital-detail-label">sys</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="cpu-idle">-%</span>
+                    <span class="vital-detail-label">idle</span>
                   </div>
                 </div>
+                <div class="vital-detail">
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="cpu-load-1">-</span>
+                    <span class="vital-detail-label">1m avg</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="cpu-load-5">-</span>
+                    <span class="vital-detail-label">5m avg</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="cpu-load-15">-</span>
+                    <span class="vital-detail-label">15m avg</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="cpu-cores">-</span>
+                    <span class="vital-detail-label">cores</span>
+                  </div>
+                </div>
+                <div
+                  id="cpu-topology"
+                  style="
+                    margin-top: 8px;
+                    font-size: 0.7rem;
+                    color: var(--text-muted);
+                    text-align: center;
+                  "
+                ></div>
               </div>
 
               <!-- Memory -->
@@ -290,34 +298,19 @@
                 </div>
               </div>
 
-              <!-- Context Meter -->
-              <div class="vital-card" id="context-meter-card">
+              <!-- Temperature -->
+              <div class="vital-card" id="temp-card">
                 <div class="vital-header">
-                  <span class="vital-label">🧠 Context Meter</span>
-                  <span class="vital-value" id="context-pct">-%</span>
+                  <span class="vital-label">🌡️ Temperature</span>
                 </div>
-                <div class="vital-bar">
-                  <div class="vital-bar-fill purple" id="context-bar" style="width: 0%"></div>
-                </div>
-                <div class="vital-detail" style="margin-top: 8px">
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="context-used">-</span>
-                    <span class="vital-detail-label">used</span>
-                  </div>
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="context-limit">200k</span>
-                    <span class="vital-detail-label">limit</span>
-                  </div>
+                <div class="temp-display">
+                  <span class="temp-value" id="temp-value">-</span>
+                  <span class="temp-unit">°C</span>
                 </div>
                 <div class="vital-detail" style="margin-top: 8px">
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="context-cached" style="color: var(--green)">-</span>
-                    <span class="vital-detail-label">cached</span>
-                  </div>
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="near-limit-hits" style="color: var(--yellow)">0</span>
-                    <span class="vital-detail-label">near-limit hits</span>
-                  </div>
+                  <span id="temp-status" style="font-size: 0.75rem; color: var(--text-muted)"
+                    >Checking...</span
+                  >
                 </div>
               </div>
             </div>
@@ -405,9 +398,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Dynamic Model Cards (populated by JS based on actual usage) -->
-          <div id="model-cards"></div>
         </div>
 
         <!-- Quick Actions -->
@@ -555,12 +545,6 @@
                     <span class="vital-detail-label">🐱 Qwen</span>
                   </div>
                 </div>
-                <div class="vital-detail" style="margin-top: 8px">
-                  <div class="vital-detail-item">
-                    <span class="vital-detail-value" id="nemo-task-count">-</span>
-                    <span class="vital-detail-label">🖥️ Nemo</span>
-                  </div>
-                </div>
                 <div
                   style="margin-top: 8px; text-align: center"
                   title="Average routing latency (classification + execution)"
@@ -569,6 +553,19 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Models Section -->
+        <div class="section" id="models-section" style="display: none">
+          <div class="section-header">
+            <div class="section-title">
+              🤖 Models
+              <span class="section-count" id="model-count">0</span>
+            </div>
+          </div>
+          <div id="models-content">
+            <!-- Model cards populated by JavaScript -->
           </div>
         </div>
 
@@ -854,32 +851,6 @@
               <div class="skeleton-bar short" style="width: 60px"></div>
             </div>
           </div>
-        </div>
-
-
-        <!-- Projects Section (Notion) -->
-        <div class="section" id="projects-section">
-          <div class="section-header">
-            <div class="section-title">
-              📋 Projects <span class="section-count" id="project-count">-</span>
-            </div>
-            <button class="btn btn-small" onclick="fetchProjects()" title="Refresh projects">
-              ↻
-            </button>
-          </div>
-
-          <!-- Projects Loading -->
-          <div id="projects-loading" style="text-align:center; padding: 20px; color: var(--text-muted);">
-            Loading projects...
-          </div>
-
-          <!-- Projects Kanban Board -->
-          <div id="projects-board" style="display: none; overflow-x: auto; padding-bottom: 10px;">
-            <div id="projects-columns" style="display: flex; gap: 16px; min-width: max-content;"></div>
-          </div>
-
-          <!-- Projects Error -->
-          <div id="projects-error" style="display: none; padding: 16px; background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); border-radius: 8px; color: var(--red);"></div>
         </div>
 
         <!-- Memory Section -->
@@ -1812,8 +1783,21 @@
 
       // Smart DOM update using morphdom - only patches what changed
       function smartUpdate(targetEl, newHtml) {
-        // Direct innerHTML replace to avoid morphdom issues
-        targetEl.innerHTML = newHtml;
+        if (typeof morphdom === "undefined") {
+          // Fallback if morphdom not loaded
+          targetEl.innerHTML = newHtml;
+          return;
+        }
+        // Create a temporary container with the new content
+        const temp = document.createElement("div");
+        temp.innerHTML = newHtml;
+        // If target has single child and temp has single child, morph directly
+        if (targetEl.children.length === 1 && temp.children.length === 1) {
+          morphdom(targetEl.firstElementChild, temp.firstElementChild);
+        } else {
+          // Otherwise morph the container itself
+          morphdom(targetEl, temp, { childrenOnly: true });
+        }
       }
 
       // Sidebar toggle
@@ -2000,62 +1984,12 @@
             renderSessions(data.sessions, data.pagination, data.statusCounts);
             if (data.tokenStats) renderTokenStats(data.tokenStats);
             if (data.capacity) renderCapacity(data.capacity);
-            // Update context meter with session data
-            if (data.sessions) updateContextMeter(data.sessions);
           }
           return data;
         } catch (e) {
           console.error("Failed to fetch sessions:", e);
           return null;
         }
-      }
-
-      // Context Meter: update the context meter card from session data
-      function updateContextMeter(sessions) {
-        const contextStateEl = document.getElementById("context-pct");
-        const contextBarEl = document.getElementById("context-bar");
-        const contextUsedEl = document.getElementById("context-used");
-        const contextLimitEl = document.getElementById("context-limit");
-        const contextCachedEl = document.getElementById("context-cached");
-        const nearLimitHitsEl = document.getElementById("near-limit-hits");
-
-        // Context window state (persisted in memory so it survives page refreshes)
-        if (!window._contextMeterState) {
-          window._contextMeterState = { nearLimitHits: 0, prevTokens: 0 };
-        }
-        const ctxState = window._contextMeterState;
-
-        // Find the main session's token count
-        const mainSession = sessions.find(
-          (s) => s.sessionKey === "agent:main:main" || s.label?.includes("Main Session"),
-        );
-        const tokens = mainSession?.tokens || 0;
-        const contextLimit = 200000; // 200k tokens
-        const nearLimitThreshold = Math.floor(contextLimit * 0.80); // 80% threshold
-
-        // Cached tokens from session (if available)
-        const cachedTokens = mainSession?.cachedTokens || 0;
-        const contextPct = Math.min(Math.round((tokens / contextLimit) * 100), 100);
-
-        // Update near-limit hits counter
-        if (tokens > nearLimitThreshold && ctxState.prevTokens <= nearLimitThreshold) {
-          ctxState.nearLimitHits++;
-        }
-        ctxState.prevTokens = tokens;
-
-        // Update display
-        if (contextStateEl) contextStateEl.innerHTML = contextPct + '% <small style="font-size:0.6em;opacity:0.7">used</small>';
-        if (contextBarEl) {
-          contextBarEl.style.width = contextPct + "%";
-          contextBarEl.className =
-            "vital-bar-fill " + (contextPct > 90 ? "red" : contextPct > 75 ? "yellow" : "purple");
-        }
-        if (contextUsedEl) contextUsedEl.textContent = tokens >= 1000 ? (tokens / 1000).toFixed(1) + "k" : tokens;
-        if (contextLimitEl) contextLimitEl.textContent = "128k";
-        if (contextCachedEl) {
-          contextCachedEl.textContent = cachedTokens >= 1000 ? (cachedTokens / 1000).toFixed(1) + "k" : (cachedTokens || "—");
-        }
-        if (nearLimitHitsEl) nearLimitHitsEl.textContent = ctxState.nearLimitHits;
       }
 
       // Change page
@@ -2136,12 +2070,10 @@
       // Unified state fetch - single API call for all dashboard data
       async function fetchData() {
         try {
-          console.log("[DEBUG] fetchData() called");
           const response = await fetch("/api/state");
-          console.log("[DEBUG] /api/state response:", response.status);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          renderFullState(data);
+          const state = await response.json();
+          renderFullState(state);
         } catch (e) {
           console.error("Failed to fetch state:", e);
           // Fallback: try individual fetches if unified fails
@@ -2164,12 +2096,8 @@
 
         // Render each section
         if (state.vitals) renderVitals(state.vitals);
-        if (state.sessions) {
-          renderSessions(state.sessions, state.pagination, state.statusCounts);
-          updateContextMeter(state.sessions);
-        }
+        if (state.sessions) renderSessions(state.sessions, state.pagination, state.statusCounts);
         if (state.tokenStats) renderTokenStats(state.tokenStats);
-        if (state.modelUsage) renderModelCards(state.modelUsage);
         if (state.capacity) renderCapacity(state.capacity);
         if (state.operators) renderOperators(state.operators);
         if (state.llmUsage) renderLlmUsage(state.llmUsage);
@@ -2236,15 +2164,9 @@
 
       // Render just sessions (for progressive loading)
       function renderSessions(sessions, pagination, statusCounts) {
-        window._lastRenderSessions = sessions.length;
         const sessionsEl = document.getElementById("sessions");
         sessionsData = sessions;
-        const mdb = document.getElementById("mega-debug");
-        if (mdb) mdb.textContent = "RENDER: sessions=" + sessions.length + " el=" + (!!sessionsEl);
-        // Visible debug counter
-        const debugEl = document.getElementById("sessions-debug");
-        if (debugEl) { debugEl.textContent = "RENDERED:" + sessions.length; debugEl.style.display = "block"; }
-        if (sessionsEl) sessionsEl.setAttribute("data-sessions", sessions.length);
+
         // Update pagination state if provided
         if (pagination) {
           paginationState = { ...paginationState, ...pagination };
@@ -2646,7 +2568,6 @@
 
       // Render capacity indicators
       function renderCapacity(capacity) {
-        console.log("[DEBUG] renderCapacity called:", capacity);
         if (!capacity) return;
         const mainEl = document.getElementById("main-capacity");
         const subEl = document.getElementById("subagent-capacity");
@@ -2804,8 +2725,45 @@
           "disk-io",
           !vitals.disk?.iops && !vitals.disk?.throughputMBps,
         );
+
+        // Temperature
+        const temp = vitals.temperature;
+        const tempNote = vitals.temperatureNote;
+        const tempEl = document.getElementById("temp-value");
+        const tempStatusEl = document.getElementById("temp-status");
+        if (temp !== null && temp !== undefined && temp > 0) {
+          if (tempEl) {
+            tempEl.textContent = temp;
+            const tempColor =
+              temp < 50
+                ? "var(--green)"
+                : temp < 70
+                  ? "var(--text)"
+                  : temp < 85
+                    ? "var(--yellow)"
+                    : "var(--red)";
+            tempEl.style.color = tempColor;
+          }
+          const tempStatus =
+            temp < 50 ? "Cool" : temp < 70 ? "Normal" : temp < 85 ? "Warm" : "Hot!";
+          if (tempStatusEl) tempStatusEl.textContent = tempStatus;
+        } else {
+          if (tempEl) {
+            tempEl.textContent = "-";
+            tempEl.style.color = "var(--text-muted)";
+          }
+          if (tempStatusEl) {
+            tempStatusEl.textContent = tempNote || "Unavailable";
+          }
+          // Show dep hint for temperature if unavailable and dep missing
+          renderDepHint("temp-hint", "temperature", true);
+        }
       }
 
+      /**
+       * Render an inline hint when an optional dependency is missing.
+       * Creates/updates a small element showing install instructions.
+       */
       function renderDepHint(elementId, affects, show) {
         let el = document.getElementById(elementId);
         if (!show || !optionalDeps) {
@@ -2863,7 +2821,6 @@
       }
 
       function renderLlmUsage(data) {
-        console.log("[DEBUG] renderLlmUsage called, sonnet:", data?.claude?.sonnet);
         // Wrap in try-catch to prevent crashes from blocking other renders
         try {
           // Handle auth errors - show clear error state instead of 0%
@@ -3103,8 +3060,7 @@
         let claudeCount = 0,
           codexCount = 0,
           llamaCount = 0,
-          qwenCount = 0,
-          nemoCount = 0;
+          qwenCount = 0;
         for (const [model, count] of Object.entries(byModel)) {
           const m = model.toLowerCase();
           if (m.includes("claude") || m.includes("opus") || m.includes("sonnet")) {
@@ -3115,8 +3071,6 @@
             llamaCount += count;
           } else if (m.includes("qwen")) {
             qwenCount += count;
-          } else if (m.includes("nemotron") || m.includes("nemo")) {
-            nemoCount += count;
           }
         }
 
@@ -3124,7 +3078,6 @@
         $set("codex-task-count", "textContent", codexCount);
         $set("llama-task-count", "textContent", llamaCount);
         $set("qwen-task-count", "textContent", qwenCount);
-        $set("nemo-task-count", "textContent", nemoCount);
 
         // Latency
         const avgLatency = data.avg_latency_ms || 0;
@@ -4431,12 +4384,6 @@
       }
 
       function handleSSEUpdate(data) {
-        console.log("[DEBUG] handleSSEUpdate called, sessions:", data?.sessions?.length, "cron:", data?.cron?.length, "keys:", Object.keys(data||{}).join(","));
-        const mdb = document.getElementById("mega-debug");
-        if (mdb) mdb.textContent = "SSE:" + (data?.sessions?.length || 0) + " | cron:" + (data?.cron?.length || 0) + " | ctx:" + (data?.tokenStats?.estCost || "?");
-        // Visible debug
-        const dbg = document.getElementById("debug-info");
-        if (dbg) dbg.textContent = "SSE:" + (data?.sessions?.length || 0);
         // Update timestamp with live indicator
         const now = new Date().toLocaleTimeString();
         document.getElementById("last-updated").textContent = now + " ⚡";
@@ -4447,7 +4394,6 @@
         );
 
         // Render full state (unified approach)
-        console.log("[DEBUG] Calling renderFullState, capacity:", data?.capacity, "llmUsage:", data?.llmUsage ? "present" : "missing");
         renderFullState(data);
       }
 
@@ -4547,92 +4493,6 @@
             })
             .join(""),
         );
-      }
-
-      // Render dynamic provider/model cards based on actual usage
-      function renderModelCards(modelUsage) {
-        if (!modelUsage || Object.keys(modelUsage).length === 0) {
-          document.getElementById("model-cards").innerHTML = "";
-          return;
-        }
-
-        // Model metadata: display name, icon, color class, plan info
-        const MODEL_META = {
-          "minimax-m2.7:cloud": { name: "MiniMax (Ollama Pro)", icon: "🦞", color: "minimax", plan: "$20/mo flat" },
-          "nemotron-3-super:cloud": { name: "NVIDIA Nemotron 3 Super", icon: "🖥️", color: "nvidia", plan: "Ollama (local)" },
-          "qwen3-coder-next": { name: "Qwen 3 Coder Next", icon: "🐱", color: "qwen", plan: "Ollama (local)" },
-          "sonnet": { name: "Claude Sonnet", icon: "🧠", color: "anthropic", plan: "Anthropic API" },
-          "opus": { name: "Claude Opus", icon: "🧠", color: "anthropic", plan: "Anthropic API" },
-          "haiku": { name: "Claude Haiku", icon: "🧠", color: "anthropic", plan: "Anthropic API" },
-          "openai/gpt-4o": { name: "GPT-4o", icon: "⚡", color: "openai", plan: "ChatGPT Plus" },
-          "openai/gpt-4o-mini": { name: "GPT-4o Mini", icon: "⚡", color: "openai", plan: "ChatGPT Plus" },
-          "openai/o1-preview": { name: "o1 Preview", icon: "⚡", color: "openai", plan: "ChatGPT Plus" },
-          "openai/o1-mini": { name: "o1 Mini", icon: "⚡", color: "openai", plan: "ChatGPT Plus" },
-          "googleai/gemini": { name: "Gemini (Google AI)", icon: "✨", color: "google", plan: "Google AI flat rate" },
-          "googleai/gemini-2.5-flash": { name: "Gemini 2.5 Flash", icon: "✨", color: "google", plan: "Google AI API" },
-          "googleai/gemini-2.5-pro": { name: "Gemini 2.5 Pro", icon: "✨", color: "google", plan: "Google AI API" },
-          "openrouter/deepseek": { name: "DeepSeek (OpenRouter)", icon: "🌐", color: "openrouter", plan: "OpenRouter" },
-          "openrouter/anthropic/claude-sonnet-4": { name: "Claude Sonnet (OpenRouter)", icon: "🧠", color: "anthropic", plan: "OpenRouter" },
-          "openrouter/anthropic/claude-opus-4": { name: "Claude Opus (OpenRouter)", icon: "🧠", color: "anthropic", plan: "OpenRouter" },
-          "openrouter/openai/o3-pro": { name: "o3-pro (OpenRouter)", icon: "⚡", color: "openai", plan: "OpenRouter" },
-          "google": { name: "Google CLI / OAuth", icon: "✨", color: "google", plan: "Google flat rate" },
-          "gateway-injected": null, // Skip internal model
-        };
-
-        const container = document.getElementById("model-cards");
-        let html = "";
-
-        for (const [model, data] of Object.entries(modelUsage)) {
-          // Skip gateway-injected and models with no tokens
-          const meta = MODEL_META[model];
-          if (!meta || !data || (data.input === 0 && data.output === 0)) continue;
-
-          const totalTokens = (data.input || 0) + (data.output || 0);
-          const reqs = data.requests || 0;
-
-          // For flat-rate models, show token count and flat rate note
-          // For per-token models, show tokens and estimated cost
-          let statLine;
-          if (model === "minimax-m2.7:cloud" || model.startsWith("nemotron") || model.startsWith("qwen")) {
-            statLine = `<span class="quota-stat-main">${formatTokenCount(totalTokens)} tokens</span><span class="quota-stat-sub">${reqs} reqs · ${meta.plan}</span>`;
-          } else {
-            const cost = data.cost > 0 ? `$${data.cost.toFixed(4)}` : "—";
-            statLine = `<span class="quota-stat-main">${formatTokenCount(totalTokens)} tokens</span><span class="quota-stat-sub">${reqs} reqs · ~${cost}</span>`;
-          }
-
-          html += `
-            <div class="utilization-card" style="flex: 1; min-width: 200px;">
-              <div class="utilization-header">
-                <div class="utilization-icon ${meta.color}">${meta.icon}</div>
-                <div>
-                  <div class="utilization-title">${meta.name}</div>
-                  <div class="utilization-subtitle">${model}</div>
-                </div>
-              </div>
-              <div style="margin-top: 10px;">
-                <div class="quota-stat-main" style="font-size: 1.1rem; font-weight: 600;">
-                  ${formatTokenCount(totalTokens)} tokens
-                </div>
-                <div style="font-size: 0.75rem; color: var(--text-muted, #8b949e); margin-top: 2px;">
-                  ${reqs} reqs
-                  ${model === "minimax-m2.7:cloud" || model.startsWith("nemotron") || model.startsWith("qwen") ? "· " + meta.plan : "· est. " + (data.cost > 0 ? "$" + data.cost.toFixed(4) : "—")}
-                </div>
-              </div>
-              <div style="margin-top: 8px; font-size: 0.7rem; color: var(--text-muted, #8b949e);">
-                <span>in: ${formatTokenCount(data.input || 0)}</span> ·
-                <span>out: ${formatTokenCount(data.output || 0)}</span>
-              </div>
-            </div>
-          `;
-        }
-
-        container.innerHTML = html;
-      }
-
-      function formatTokenCount(n) {
-        if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-        if (n >= 1_000) return (n / 1_000).toFixed(0) + "K";
-        return n.toString();
       }
 
       // Enhanced Token Stats with Quota Visualization
@@ -4743,9 +4603,6 @@
 
       // Init - try SSE first, fall back to polling
       async function init() {
-        console.log("[INIT] init() called");
-        const mdb = document.getElementById("mega-debug");
-        if (mdb) mdb.textContent = "INIT RUNNING...";
         // Load privacy settings from server first (before rendering any data)
         await loadPrivacyFromServer();
         console.log("[Privacy] Settings loaded from server");
@@ -4801,16 +4658,6 @@
           renderHiddenSessionsList();
           renderHiddenTopicsList();
         });
-
-        // Poll context meter every 30s (independent of full state refresh)
-        setInterval(() => {
-          fetch("/api/state")
-            .then((r) => r.json())
-            .then((d) => {
-              if (d?.sessions) updateContextMeter(d.sessions);
-            })
-            .catch(() => {});
-        }, 30000);
       }
 
       // Ensure DOM is ready before initializing

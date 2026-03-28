@@ -30,7 +30,8 @@ async function getAPI() {
     });
     return apiInstance;
   } catch (e) {
-    console.error("Failed to load jobs API:", e.message);
+    console.warn("Jobs API unavailable (jobs module not found):", e.message);
+    forceApiUnavailable = true; // permanently disable retries
     return null;
   }
 }

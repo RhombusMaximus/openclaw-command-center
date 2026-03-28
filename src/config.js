@@ -266,6 +266,41 @@ function loadConfig() {
       ),
       claudePlanName:
         process.env.CLAUDE_PLAN_NAME || fileConfig.billing?.claudePlanName || "Claude Code Max",
+      // Model-specific token rates (per 1M tokens) — use env vars or file config
+      // Env var format: TOKEN_RATE_INPUT=0.001 TOKEN_RATE_OUTPUT=0.01
+      // Or via JSON in dashboard.local.json: { "billing": { "modelRates": { "__default__": { "input": 0.001, "output": 0.01 } } } }
+      modelRates: (() => {
+        // Check for MiniMax flag
+        if (process.env.MINIMAX_TOKEN_RATES === "true") {
+          return {
+            __default__: {
+              input: 0.001,
+              output: 0.01,
+              cacheRead: 0.0001,
+              cacheWrite: 0.0002,
+            },
+            "minimax-m2.7:cloud": {
+              input: 0.001,
+              output: 0.01,
+              cacheRead: 0.0001,
+              cacheWrite: 0.0002,
+            },
+          };
+        }
+        // Check for individual env var overrides
+        if (process.env.TOKEN_RATE_INPUT || process.env.TOKEN_RATE_OUTPUT) {
+          return {
+            __default__: {
+              input: parseFloat(process.env.TOKEN_RATE_INPUT) || 0.5,
+              output: parseFloat(process.env.TOKEN_RATE_OUTPUT) || 2.0,
+              cacheRead: parseFloat(process.env.TOKEN_RATE_CACHE_READ) || 0.05,
+              cacheWrite: parseFloat(process.env.TOKEN_RATE_CACHE_WRITE) || 0.125,
+            },
+          };
+        }
+        // Fall back to file config
+        return fileConfig.billing?.modelRates || null;
+      })(),
     },
   };
 

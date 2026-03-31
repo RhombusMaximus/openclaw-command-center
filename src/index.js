@@ -72,6 +72,7 @@ const {
   startOperatorsRefresh,
 } = require("./operators");
 const notion = require("./notion");
+const secretsModule = require("./secrets");
 const { createSessionsModule } = require("./sessions");
 const { getCronJobs } = require("./cron");
 const { getCerebroTopics, updateTopicStatus } = require("./cerebro");
@@ -620,6 +621,8 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: "Method not allowed" }));
     }
     return;
+  } else if (pathname === "/api/secrets" || pathname === "/api/secrets/audit") {
+    secretsModule.handleSecretsRequest(req, res, pathname, query);
   } else if (isJobsRoute(pathname)) {
     handleJobsRequest(req, res, pathname, query, req.method);
   } else if (pathname === "/api/notion/projects") {

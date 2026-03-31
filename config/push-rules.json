@@ -1,0 +1,96 @@
+{
+  "_comment": "Push Listener Rules — event-driven notification configuration",
+  "_doc": "https://docs.openclaw.ai/events for event schema",
+  "rules": [
+    {
+      "id": "subagent-done",
+      "name": "Sub-agent Completed",
+      "description": "Notify when a sub-agent task finishes",
+      "event": "session.ended",
+      "match": {
+        "sessionKeyPattern": ":subagent:"
+      },
+      "cooldownMs": 60000,
+      "notify": {
+        "title": "✅ Sub-agent Done",
+        "bodyTemplate": "*{{label}}* finished — {{outcome}}",
+        "urgent": false
+      },
+      "enabled": true
+    },
+    {
+      "id": "session-crash",
+      "name": "Session Crash",
+      "description": "Notify if a session terminates unexpectedly",
+      "event": "session.ended",
+      "match": {
+        "outcome": "crashed"
+      },
+      "cooldownMs": 30000,
+      "notify": {
+        "title": "💥 Session Crashed",
+        "bodyTemplate": "*{{sessionKey}}* crashed: {{errorSummary}}",
+        "urgent": true
+      },
+      "enabled": true
+    },
+    {
+      "id": "heartbeat-missed",
+      "name": "Missed Heartbeat",
+      "description": "Notify if no heartbeat received for 10 minutes",
+      "event": "heartbeat.missed",
+      "cooldownMs": 300000,
+      "notify": {
+        "title": "⚠️ Missed Heartbeat",
+        "bodyTemplate": "No heartbeat in {{gapMinutes}} minutes. Gateway may be stalled.",
+        "urgent": true
+      },
+      "enabled": false
+    },
+    {
+      "id": "cron-job-failed",
+      "name": "Cron Job Failed",
+      "description": "Notify when a scheduled job fails",
+      "event": "cron.failed",
+      "cooldownMs": 300000,
+      "notify": {
+        "title": "❌ Cron Job Failed",
+        "bodyTemplate": "Job *{{jobName}}* failed: {{errorSummary}}",
+        "urgent": true
+      },
+      "enabled": true
+    },
+    {
+      "id": "error-threshold",
+      "name": "Error Rate Spike",
+      "description": "Notify when error rate exceeds 20% in 5 minutes",
+      "event": "metrics.error_rate",
+      "match": {
+        "errorRateThreshold": 0.2
+      },
+      "cooldownMs": 600000,
+      "notify": {
+        "title": "🔴 Error Rate Spike",
+        "bodyTemplate": "Error rate {{errorRate}}% (threshold 20%) in the last {{windowMinutes}}m",
+        "urgent": true
+      },
+      "enabled": false
+    },
+    {
+      "id": "keyword-alert",
+      "name": "Keyword Alert",
+      "description": "Notify on specific keywords in session messages",
+      "event": "message",
+      "match": {
+        "messagePattern": "\\b(failed|crashed|error|exception|timeout|breach|urgent)\\b"
+      },
+      "cooldownMs": 120000,
+      "notify": {
+        "title": "🔎 Keyword Alert",
+        "bodyTemplate": "*{{sessionKey}}*: \"{{matchedText}}\" in: {{messagePreview}}",
+        "urgent": false
+      },
+      "enabled": false
+    }
+  ]
+}

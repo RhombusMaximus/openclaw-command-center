@@ -298,103 +298,35 @@
                 </div>
               </div>
 
-              <!-- Temperature -->
-              <div class="vital-card" id="temp-card">
+              <!-- Context Meter -->
+              <div class="vital-card" id="context-meter-card">
                 <div class="vital-header">
-                  <span class="vital-label">🌡️ Temperature</span>
+                  <span class="vital-label">🧠 Context Meter</span>
+                  <span class="vital-value" id="context-pct">-%</span>
                 </div>
-                <div class="temp-display">
-                  <span class="temp-value" id="temp-value">-</span>
-                  <span class="temp-unit">°C</span>
+                <div class="vital-bar">
+                  <div class="vital-bar-fill purple" id="context-bar" style="width: 0%"></div>
                 </div>
                 <div class="vital-detail" style="margin-top: 8px">
-                  <span id="temp-status" style="font-size: 0.75rem; color: var(--text-muted)"
-                    >Checking...</span
-                  >
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="context-used">-</span>
+                    <span class="vital-detail-label">used</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="context-limit">128k</span>
+                    <span class="vital-detail-label">limit</span>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Token Utilization Widget -->
-        <div class="utilization-section">
-          <div class="utilization-card" id="anthropic-quota">
-            <div class="utilization-header">
-              <div class="utilization-icon anthropic">🧠</div>
-              <div>
-                <div class="utilization-title">Claude (Anthropic)</div>
-                <div class="utilization-subtitle">API Usage</div>
-              </div>
-            </div>
-            <div>
-              <div class="quota-stats">
-                <span>Session Usage</span>
-                <span
-                  ><span class="quota-value" id="claude-compact-session-pct">-%</span> used</span
-                >
-              </div>
-              <div class="quota-bar">
-                <div
-                  class="quota-bar-fill low"
-                  id="claude-compact-session-bar"
-                  style="width: 0%"
-                ></div>
-              </div>
-            </div>
-            <div style="margin-top: 8px">
-              <div class="quota-stats">
-                <span>Weekly Usage</span>
-                <span><span class="quota-value" id="claude-compact-week-pct">-%</span> used</span>
-              </div>
-              <div class="quota-bar">
-                <div
-                  class="quota-bar-fill low"
-                  id="claude-compact-week-bar"
-                  style="width: 0%"
-                ></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="utilization-card" id="openai-quota">
-            <div class="utilization-header">
-              <div class="utilization-icon openai">⚡</div>
-              <div>
-                <div class="utilization-title">Codex (OpenAI)</div>
-                <div class="utilization-subtitle">ChatGPT Plus</div>
-              </div>
-            </div>
-            <div>
-              <div class="quota-stats">
-                <span>5-Hour Usage</span>
-                <span><span class="quota-value" id="codex-5h-pct">0%</span> used</span>
-              </div>
-              <div class="quota-bar">
-                <div class="quota-bar-fill low" id="codex-5h-bar" style="width: 0%"></div>
-              </div>
-            </div>
-            <div style="margin-top: 8px">
-              <div class="quota-stats">
-                <span>Daily Usage</span>
-                <span><span class="quota-value" id="codex-day-pct">0%</span> used</span>
-              </div>
-              <div class="quota-bar">
-                <div class="quota-bar-fill low" id="codex-day-bar" style="width: 0%"></div>
-              </div>
-            </div>
-            <div
-              style="
-                margin-top: 16px;
-                padding-top: 12px;
-                border-top: 1px solid var(--border);
-                font-size: 0.75rem;
-                color: var(--text-muted);
-              "
-            >
-              <div style="display: flex; justify-content: space-between">
-                <span>Tasks Today</span>
-                <span id="codex-tasks">0</span>
+                <div class="vital-detail" style="margin-top: 8px">
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="context-cached" style="color: var(--green)">-</span>
+                    <span class="vital-detail-label">cached</span>
+                  </div>
+                  <div class="vital-detail-item">
+                    <span class="vital-detail-value" id="near-limit-hits">0</span>
+                    <span class="vital-detail-label">80%+ hits</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2094,17 +2026,26 @@
           i18nText("sidebar.updated", { time: now }, `Updated: ${now}`),
         );
 
-        // Render each section
-        if (state.vitals) renderVitals(state.vitals);
-        if (state.sessions) renderSessions(state.sessions, state.pagination, state.statusCounts);
-        if (state.tokenStats) renderTokenStats(state.tokenStats);
-        if (state.capacity) renderCapacity(state.capacity);
-        if (state.operators) renderOperators(state.operators);
-        if (state.llmUsage) renderLlmUsage(state.llmUsage);
-        if (state.cron) renderCron(state.cron);
-        if (state.memory) renderMemory(state.memory);
-        if (state.cerebro) renderCerebro(state.cerebro);
-        if (state.subagents) renderSubagents(state.subagents);
+        // Render each section with error isolation — one crash won't kill the whole dashboard
+        const renders = [
+          ["vitals", () => renderVitals(state.vitals)],
+          ["sessions", () => renderSessions(state.sessions, state.pagination, state.statusCounts)],
+          ["tokenStats", () => renderTokenStats(state.tokenStats)],
+          ["capacity", () => renderCapacity(state.capacity)],
+          ["operators", () => renderOperators(state.operators)],
+          ["llmUsage", () => renderLlmUsage(state.llmUsage)],
+          ["cron", () => renderCron(state.cron)],
+          ["memory", () => renderMemory(state.memory)],
+          ["cerebro", () => renderCerebro(state.cerebro)],
+          ["subagents", () => renderSubagents(state.subagents)],
+        ];
+        for (const [key, fn] of renders) {
+          try {
+            if (state[key]) fn();
+          } catch (e) {
+            console.error(`[renderFullState] ${key} render failed:`, e.message);
+          }
+        }
       }
 
       // Legacy fallback - multiple API calls (used if /api/state fails)
@@ -2541,7 +2482,7 @@
 
       // Render token stats
       function renderTokenStats(stats) {
-        if (!stats) return;
+        if (!stats) { return; }
         currentTokenStats = stats; // Store for window switching
 
         $set("total-tokens", "textContent", stats.total || "0");
@@ -2726,37 +2667,12 @@
           !vitals.disk?.iops && !vitals.disk?.throughputMBps,
         );
 
-        // Temperature
-        const temp = vitals.temperature;
-        const tempNote = vitals.temperatureNote;
-        const tempEl = document.getElementById("temp-value");
-        const tempStatusEl = document.getElementById("temp-status");
-        if (temp !== null && temp !== undefined && temp > 0) {
-          if (tempEl) {
-            tempEl.textContent = temp;
-            const tempColor =
-              temp < 50
-                ? "var(--green)"
-                : temp < 70
-                  ? "var(--text)"
-                  : temp < 85
-                    ? "var(--yellow)"
-                    : "var(--red)";
-            tempEl.style.color = tempColor;
-          }
-          const tempStatus =
-            temp < 50 ? "Cool" : temp < 70 ? "Normal" : temp < 85 ? "Warm" : "Hot!";
-          if (tempStatusEl) tempStatusEl.textContent = tempStatus;
-        } else {
-          if (tempEl) {
-            tempEl.textContent = "-";
-            tempEl.style.color = "var(--text-muted)";
-          }
-          if (tempStatusEl) {
-            tempStatusEl.textContent = tempNote || "Unavailable";
-          }
-          // Show dep hint for temperature if unavailable and dep missing
-          renderDepHint("temp-hint", "temperature", true);
+        // Context Meter
+        if (typeof updateContextMeter === "function") {
+          const mainSession = data.sessions?.find(
+            (s) => s.sessionKey === "agent:main:main" || s.label?.includes("Main Session"),
+          );
+          if (mainSession) updateContextMeter(data.sessions);
         }
       }
 
@@ -2807,6 +2723,45 @@
           dep.purpose.toLowerCase() +
           ": " +
           action;
+      }
+
+      // Context Meter: update the context meter card from session data
+      function updateContextMeter(sessions) {
+        const contextStateEl = document.getElementById("context-pct");
+        const contextBarEl = document.getElementById("context-bar");
+        const contextUsedEl = document.getElementById("context-used");
+        const contextLimitEl = document.getElementById("context-limit");
+        const contextCachedEl = document.getElementById("context-cached");
+        const nearLimitHitsEl = document.getElementById("near-limit-hits");
+
+        if (!window._contextMeterState) {
+          window._contextMeterState = { nearLimitHits: 0, prevTokens: 0 };
+        }
+        const ctxState = window._contextMeterState;
+
+        const mainSession = sessions.find(
+          (s) => s.sessionKey === "agent:main:main" || s.label?.includes("Main Session"),
+        );
+        const tokens = mainSession?.tokens || 0;
+        const contextLimit = 128000;
+        const nearLimitThreshold = Math.floor(contextLimit * 0.8);
+        const cachedTokens = mainSession?.cachedTokens || 0;
+        const contextPct = Math.min(Math.round((tokens / contextLimit) * 100), 100);
+
+        if (tokens > nearLimitThreshold && ctxState.prevTokens <= nearLimitThreshold) {
+          ctxState.nearLimitHits++;
+        }
+        ctxState.prevTokens = tokens;
+
+        if (contextStateEl) contextStateEl.innerHTML = contextPct + '% <small style="font-size:0.6em;opacity:0.7">used</small>';
+        if (contextBarEl) {
+          contextBarEl.style.width = contextPct + "%";
+          contextBarEl.className = "vital-bar-fill " + (contextPct > 90 ? "red" : contextPct > 75 ? "yellow" : "purple");
+        }
+        if (contextUsedEl) contextUsedEl.textContent = tokens >= 1000 ? (tokens / 1000).toFixed(1) + "k" : tokens;
+        if (contextLimitEl) contextLimitEl.textContent = "128k";
+        if (contextCachedEl) contextCachedEl.textContent = cachedTokens >= 1000 ? (cachedTokens / 1000).toFixed(1) + "k" : (cachedTokens || "—");
+        if (nearLimitHitsEl) nearLimitHitsEl.textContent = ctxState.nearLimitHits;
       }
 
       // Safe DOM helper - sets property only if element exists
